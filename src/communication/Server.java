@@ -3,7 +3,6 @@ package communication;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 
 /**
@@ -53,15 +52,17 @@ public class Server {
 
     /**
      * Initializes the socket as a multicast socket
-     * @param socket Multicast Socket Object
      * @param port Address of the port
      */
-    private void initializeSocket(MulticastSocket socket, String port) {
+    private MulticastSocket initializeSocket(String port) {
+        MulticastSocket soc = null;
         try {
-            socket = new MulticastSocket(Integer.parseInt(port));
+            soc = new MulticastSocket(Integer.parseInt(port));
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return soc;
     }
 
     /**
@@ -82,10 +83,13 @@ public class Server {
         public MyThread(Sockets type, String ip, String port) {
             // store parameter for later user
             channel = type;
-            initializeSocket(socket, port);
+            socket = initializeSocket(port);
             try {
                 address = InetAddress.getByName(ip);
+                socket.joinGroup(address);
             } catch (UnknownHostException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
