@@ -15,9 +15,10 @@ public class Chunk {
     private int minimunReplication;
 
     /**
-     * The size of the chunk. 0 <= size <= 64KB
+     * The chunk data. 0 <= data.size() <= 64KB
+     * If null, data needs to be read from the storage (file system).
      */
-    private int size;
+    private byte[] data = null;
 
     /**
      * Chunk's id.
@@ -45,14 +46,6 @@ public class Chunk {
         this.minimunReplication = minimunReplication;
     }
 
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(int size) {
-        this.size = size;
-    }
-
     public String getId() {
         return id;
     }
@@ -67,5 +60,13 @@ public class Chunk {
 
     public void setFileId(String fileId) {
         this.fileId = fileId;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
     }
 }

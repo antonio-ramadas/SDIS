@@ -43,7 +43,38 @@ public class Backup {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
 
+        dir = new File("files/backup");
+        success = dir.mkdir();
+        if (success) {
+            System.out.println("Directory Created!");
+        } else {
+            try {
+                Files.walk(Paths.get("files")).forEach(filePath -> {
+                    if (Files.isRegularFile(filePath)) {
+                        System.out.println(filePath);
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        dir = new File("files/reconstruct");
+        success = dir.mkdir();
+        if (success) {
+            System.out.println("Directory Created!");
+        } else {
+            try {
+                Files.walk(Paths.get("files")).forEach(filePath -> {
+                    if (Files.isRegularFile(filePath)) {
+                        System.out.println(filePath);
+                    }
+                });
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 

@@ -5,7 +5,7 @@ package protocols;
  */
 public class FileDeletion {
     /**
-     * TODO: Melhoramento
+     * TODO: Melhoramento (Igual ao Space Reclaiming)
      * Cada vez que o servidor "acorda", manda removed de todos os ficheiros.
      * Caso não receba nenhuma mensagem putchunk significa que é seguro apagar.
      * Se receber, responde e não apaga.
