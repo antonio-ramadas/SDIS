@@ -1,8 +1,6 @@
 package communication;
 
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.MulticastSocket;
 import java.net.UnknownHostException;
 
 /**
@@ -15,31 +13,17 @@ public class Server {
     private String id;
 
     /**
-     * IP of the Multicast Channel, the control channel
+     * Channel of the Multicast Channel, the control channel
      */
-    private String MC_IP;
+    private Channel MC_Channel;
     /**
-     * Port of theMulticast Channel, the control channel
+     * Channel of the Multicast Data Channel
      */
-    private String MC_PORT;
-
+    private Channel MDB_Channel;
     /**
-     * IP of the Multicast Data Channel
+     * Channel of the Multicast Data Recovery channel
      */
-    private String MDB_IP;
-    /**
-     * Port of the Multicast Data Channel
-     */
-    private String MDB_PORT;
-
-    /**
-     * IP of the Multicast Data Recovery channel
-     */
-    private String MDR_IP;
-    /**
-     * Port of the Multicast Data Recovery channel
-     */
-    private String MDR_PORT;
+    private Channel MDR_Channel;
 
     /**
      * Only one sever is allowed.
@@ -51,42 +35,21 @@ public class Server {
     }
 
     /**
-     * Initializes the socket as a multicast socket
-     * @param port Address of the port
-     */
-    private MulticastSocket initializeSocket(String port) {
-        MulticastSocket soc = null;
-        try {
-            soc = new MulticastSocket(Integer.parseInt(port));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return soc;
-    }
-
-    /**
      * Each channel is handled by a separated thread
      */
     private class MyThread implements Runnable {
 
-        private MulticastSocket socket;
-        private InetAddress address;
-        private Sockets channel;
+        private Channel channel;
 
         /**
          * Constructor of the thread. It requires the channel's information.
-         * @param type channel that will be handled by this thread
-         * @param ip channel's ip
-         * @param port channel's port
+         * @param channel1 channel that will be handled by this thread
          */
-        public MyThread(Sockets type, String ip, String port) {
+        public MyThread(Channel channel1) {
             // store parameter for later user
-            channel = type;
-            socket = initializeSocket(port);
+            channel = channel1;
             try {
-                address = InetAddress.getByName(ip);
-                socket.joinGroup(address);
+                channel.getSocket().joinGroup(channel.getAddress());
             } catch (UnknownHostException e) {
                 e.printStackTrace();
             } catch (IOException e) {
@@ -96,10 +59,11 @@ public class Server {
 
         /**
          * Loop to listen the channel. Each meaningful message is handled by another separate thread.
+         * This method has a loop to check the channels. In case of data received, it'll call the handler.
          */
         public void run() {
             for (int i = 0; i < 2; i++) {
-                System.out.println(channel);
+                System.out.println(channel.getType());
                 try {
                     Thread.sleep((long) Math.random()%1000);
                 } catch (InterruptedException e) {
@@ -114,15 +78,15 @@ public class Server {
      * This method will start the connection handler.
      */
     public void start() {
-        Runnable mc = new MyThread(Sockets.MULTICAST_CHANNEL, MC_IP, MC_PORT);
+        Runnable mc = new MyThread(MC_Channel);
         Thread mc_thread = new Thread(mc);
         mc_thread.start();
 
-        Runnable mdb = new MyThread(Sockets.MULTICAST_DATA_CHANNEL, MDB_IP, MDB_PORT);
+        Runnable mdb = new MyThread(MDB_Channel);
         Thread mdb_thread = new Thread(mdb);
         mdb_thread.start();
 
-        Runnable mdr = new MyThread(Sockets.MULTICAST_DATA_RECOVERY, MDR_IP, MDR_PORT);
+        Runnable mdr = new MyThread(MDR_Channel);
         Thread mdr_thread = new Thread(mdr);
         mdr_thread.start();
 
@@ -137,29 +101,24 @@ public class Server {
     }
 
     /**
-     * This method has a loop to check the channels. In case of data received, it'll call the handler.
+     * Creates a new channel. The channel initializes the socket.
+     * @param s Type of Channel (MC, MDB, MDR)
+     * @param ip IP of the channel
+     * @param port Port of the channel
      */
-    private void run(Sockets type) {
-
-    }
-
-    public void setMC(String ip, String port) {
-        MC_IP = ip;
-        MC_PORT = port;
-    }
-
-    public void setMDB(String ip, String port) {
-        MDB_IP = ip;
-        MDB_PORT = port;
-    }
-
-    public void setMDR(String ip, String port) {
-        MDR_IP = ip;
-        MDR_PORT = port;
-    }
-
-    public String getId() {
-        return id;
+    public void createChannel(Sockets s, String ip, String port) {
+        Channel socket = new Channel(s, ip, port);
+        switch (s) {
+            case MULTICAST_CHANNEL:
+                MC_Channel = socket;
+                break;
+            case MULTICAST_DATA_CHANNEL:
+                MDB_Channel = socket;
+                break;
+            case MULTICAST_DATA_RECOVERY:
+                MDR_Channel = socket;
+                break;
+        }
     }
 
     public void setId(String id1) {

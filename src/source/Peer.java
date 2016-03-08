@@ -1,6 +1,7 @@
 package source;
 
 import communication.Server;
+import communication.Sockets;
 import storage.Backup;
 
 /**
@@ -15,9 +16,12 @@ public class Peer {
         }
 
         Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
-        Server.getInstance().setMC(args[Arguments.MC_IP.ordinal()], args[Arguments.MC_PORT.ordinal()]);
-        Server.getInstance().setMDB(args[Arguments.MDB_IP.ordinal()], args[Arguments.MDB_PORT.ordinal()]);
-        Server.getInstance().setMDR(args[Arguments.MDR_IP.ordinal()], args[Arguments.MDR_PORT.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,
+                args[Arguments.MC_IP.ordinal()], args[Arguments.MC_PORT.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_CHANNEL,
+                args[Arguments.MDB_IP.ordinal()], args[Arguments.MDB_PORT.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_RECOVERY,
+                args[Arguments.MDR_IP.ordinal()], args[Arguments.MDR_PORT.ordinal()]);
 
         Server.getInstance().start();
 
