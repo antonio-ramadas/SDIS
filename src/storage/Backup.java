@@ -29,13 +29,13 @@ public class Backup {
     }
 
     private Backup() {
-        File dir = new File("chunks");
+        File dir = new File("files/chunks");
         Boolean success = dir.mkdir();
         if (success) {
             System.out.println("Directory Created!");
         } else {
             try {
-                Files.walk(Paths.get("chunks")).forEach(filePath -> {
+                Files.walk(Paths.get("files/chunks")).forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         System.out.println(filePath);
                     }

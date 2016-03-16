@@ -5,9 +5,12 @@ import communication.Sockets;
 import storage.Backup;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Created by Antonio on 06-03-2016.
@@ -20,13 +23,26 @@ public class Peer {
             return;
         }
 
+        /*
+        MessageDigest md = null;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+            String text = "This is some text";
 
-        /*Path path = Paths.get("chunks/caminho.txt");
+            md.update(text.getBytes("UTF-8")); // Change this to "UTF-16" if needed
+            byte[] digest = md.digest();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }*/
+
+        Path path = Paths.get("files/chunks/caminho.txt");
         try {
             byte[] data = Files.readAllBytes(path);
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
 
         Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
         Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,
