@@ -1,5 +1,7 @@
 package message;
 
+import console.MessageCenter;
+
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +32,11 @@ public class Message {
      * The message of the message.
      */
     private byte[] message = null;
+
+    /**
+     * Type of message. (PUTCHUNK, STORED, ...)
+     */
+    private MessageTypes messageType = null;
 
     /**
      * Constructor of the message header and body.
@@ -84,12 +91,48 @@ public class Message {
 
         if (m.find()) {
             structurize(m);
+            parseType();
         } else {
             //the message does not follow the pattern
+            MessageCenter.error("Message failed to be parsed.");
             return false;
         }
 
         return true;
+    }
+
+    /**
+     * Converts the type of message from string to enum element.
+     */
+    private void parseType() {
+        String type = header.getMessageType();
+
+        if (type.equalsIgnoreCase("PUTCHUNK")) {
+            messageType = MessageTypes.PUTCHUNK;
+            return;
+        }
+        if (type.equalsIgnoreCase("STORED")) {
+            messageType = MessageTypes.STORED;
+            return;
+        }
+
+        if (type.equalsIgnoreCase("GETCHUNK")) {
+            messageType = MessageTypes.GETCHUNK;
+            return;
+        }
+        if (type.equalsIgnoreCase("CHUNK")) {
+            messageType = MessageTypes.CHUNK;
+            return;
+        }
+
+        if (type.equalsIgnoreCase("DELETE")) {
+            messageType = MessageTypes.DELETE;
+            return;
+        }
+
+        if (type.equalsIgnoreCase("REMOVED")) {
+            messageType = MessageTypes.REMOVED;
+        }
     }
 
     /**
@@ -143,5 +186,9 @@ public class Message {
 
     public void setBody(Body body) {
         this.body = body;
+    }
+
+    public MessageTypes getMessageType() {
+        return messageType;
     }
 }

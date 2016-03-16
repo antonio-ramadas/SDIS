@@ -1,5 +1,6 @@
 package source;
 
+import communication.Request;
 import communication.Server;
 import communication.Sockets;
 import message.Message;

@@ -45,15 +45,6 @@ public class Server {
     private final Semaphore nThreadsSem = new Semaphore(MAX_AVAILABLE, true);
 
     /**
-     * The chunks that the peer is handling.
-     */
-    private Vector<Chunk> chunks = new Vector<Chunk>();
-    /**
-     * The chunks is accessible to all of the threads, so a semaphore is required to keep the data consistent
-     */
-    private final Semaphore chunksSem = new Semaphore(MAX_AVAILABLE, true);
-
-    /**
      * Only one sever is allowed.
      */
     private static Server ourInstance = new Server();
@@ -90,7 +81,12 @@ public class Server {
          * This method has a loop to check the channels. In case of data received, it'll call the handler.
          */
         public void run() {
+            //loop
 
+            //increase for each request
+            incNumberThreads();
+
+            //calls the request handler
         }
     }
 

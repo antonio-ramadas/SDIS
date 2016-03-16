@@ -7,17 +7,28 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.Semaphore;
 
 /**
  * Created by Antonio on 06-03-2016.
  */
 public class Backup {
+
+    /**
+     * Maximum number of requests the semaphore can allow to access at the same time
+     */
+    private static final int MAX_AVAILABLE = 1;
+    /**
+     * The chunks is accessible to all of the threads, so a semaphore is required to keep the data consistent
+     */
+    private final Semaphore chunksSem = new Semaphore(MAX_AVAILABLE, true);
+
     /**
      * This map will keep track of stored chunks.
      * The key is the file id. Each key can have multiple values.
      * Each value is a chunk.
      */
-    private static Map<String,Vector<Chunk>> chunks = new HashMap<String,Vector<Chunk>>();
+    private Map<String,Vector<Chunk>> chunks = new HashMap<String,Vector<Chunk>>();
 
     /**
      * Only one file explorer handler is allowed.
@@ -35,7 +46,7 @@ public class Backup {
             System.out.println("Directory Created!");
         } else {
             try {
-                Files.walk(Paths.get("files/chunks")).forEach(filePath -> {
+                Files.walk(Paths.get("files")).forEach(filePath -> {
                     if (Files.isRegularFile(filePath)) {
                         System.out.println(filePath);
                     }
@@ -78,11 +89,4 @@ public class Backup {
         }
     }
 
-    public Map<String, Vector<Chunk>> getChunks() {
-        return chunks;
-    }
-
-    public void setChunks(Map<String, Vector<Chunk>> chunks) {
-        this.chunks = chunks;
-    }
 }

@@ -2,6 +2,10 @@ package communication;
 
 import console.MessageCenter;
 import message.Message;
+import protocols.ChunkBackup;
+import protocols.ChunkRestore;
+import protocols.FileDeletion;
+import protocols.SpaceReclaiming;
 
 import java.net.DatagramPacket;
 import java.util.Arrays;
@@ -52,7 +56,8 @@ public class Request {
 
             Message message = new Message(data);
             if (message.decompose()) {
-                MessageCenter.output("Message successfully received: " + message);
+                MessageCenter.output("Message successfully received and decomposed: " + message);
+                chooseProtocol(message);
             } else {
                 MessageCenter.error("Message received with errors!");
             }
@@ -60,6 +65,36 @@ public class Request {
             //the last final instruction
             //it means that the count of the number of active threads will decrease
             Server.getInstance().decNumberThreads();
+        }
+    }
+
+    /**
+     * Choose the protocol of the message.
+     * Call its handler.
+     * @param message message decomposed received from the channels
+     */
+    private void chooseProtocol(Message message) {
+        switch (message.getMessageType()) {
+            case PUTCHUNK:
+            case STORED:
+                ChunkBackup backup = new ChunkBackup(message);
+                backup.handleReceived();
+                break;
+            case GETCHUNK:
+                ChunkRestore restore1 = new ChunkRestore(message, address, port);
+                restore1.handleReceived();
+            case CHUNK:
+                ChunkRestore restore2 = new ChunkRestore(message);
+                restore2.handleReceived();
+                break;
+            case DELETE:
+                FileDeletion fileDeletion = new FileDeletion(message);
+                fileDeletion.handleReceived();
+                break;
+            case REMOVED:
+                SpaceReclaiming spaceReclaiming = new SpaceReclaiming(message);
+                spaceReclaiming.handleReceived();
+                break;
         }
     }
 }
