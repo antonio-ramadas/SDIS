@@ -2,6 +2,7 @@ package source;
 
 import communication.Server;
 import communication.Sockets;
+import message.Message;
 import storage.Backup;
 
 import java.io.IOException;
@@ -23,6 +24,9 @@ public class Peer {
             return;
         }
 
+        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 iidata".getBytes());
+        m.decompose();
+
         /*
         MessageDigest md = null;
         try {
@@ -37,7 +41,7 @@ public class Peer {
             e.printStackTrace();
         }*/
 
-        Path path = Paths.get("files/chunks/caminho.txt");
+        /*Path path = Paths.get("files/chunks/caminho.txt");
         try {
             byte[] data = Files.readAllBytes(path);
         } catch (IOException e) {
@@ -57,6 +61,6 @@ public class Peer {
         //para já só cria diretórios
         //não faz mais nada
         //método de teste
-        Backup.getInstance();
+        Backup.getInstance();*/
     }
 }

@@ -11,6 +11,10 @@ public class Body {
      */
     private byte[] data = null;
 
+    public Body(byte[] data) {
+        this.data = data.clone();
+    }
+
     public byte[] getData() {
         return data;
     }
