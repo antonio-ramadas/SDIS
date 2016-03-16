@@ -12,7 +12,7 @@ public class Message {
     /**
      * The regex pattern of the message.
      */
-    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64}) (\\d{1,6}) (\\d) ..";
+    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64}) (\\d{1,6}) (\\d) ....";
 
     /**
      * Each message has a header.
@@ -29,7 +29,35 @@ public class Message {
     /**
      * The message of the message.
      */
-    private byte[] message;
+    private byte[] message = null;
+
+    /**
+     * Constructor of the message header and body.
+     * @param messageType Type of message (PUTCHUNK, STORED, ...)
+     * @param version Version of the message (x.y)
+     * @param senderId ID of the server
+     * @param fileId ID of the file
+     * @param chunkNo Number of the chunk
+     * @param replicationDeg Degree of replication
+     * @param data Body of the message
+     */
+    public Message(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg, byte[] data) {
+        this(messageType, version, senderId, fileId, chunkNo, replicationDeg);
+        body = new Body(data);
+    }
+
+    /**
+     * Constructor of the message header.
+     * @param messageType Type of message (PUTCHUNK, STORED, ...)
+     * @param version Version of the message (x.y)
+     * @param senderId ID of the server
+     * @param fileId ID of the file
+     * @param chunkNo Number of the chunk
+     * @param replicationDeg Degree of replication
+     */
+    public Message(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg) {
+        header = new Header(messageType, version, senderId, fileId, chunkNo, replicationDeg);
+    }
 
     /**
      * Create an object with the message string
@@ -62,6 +90,22 @@ public class Message {
         }
 
         return true;
+    }
+
+    /**
+     * The message is composed to an array of bytes
+     * @return Array of bytes of the message
+     */
+    public byte[] compose() {
+        byte[] headerArray = header.bytify();
+        byte[] bodyArray = body.getData();
+
+        byte[] messageArray = new byte[headerArray.length + bodyArray.length];
+
+        System.arraycopy(headerArray, 0, messageArray, 0, headerArray.length);
+        System.arraycopy(bodyArray, 0, messageArray, headerArray.length, bodyArray.length);
+
+        return messageArray;
     }
 
     /**

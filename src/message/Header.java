@@ -5,6 +5,9 @@ package message;
  */
 public class Header {
 
+    private final static byte CR = 0x0D;
+    private final static byte LF = 0x0A;
+
     /**
      * This is the type of the message.
      * Is encoded as a variable length sequence of ASCII characters.
@@ -51,6 +54,21 @@ public class Header {
         this.fileId = fileId;
         this.chunkNo = chunkNo;
         this.replicationDeg = replicationDeg;
+    }
+
+    public byte[] bytify() {
+        String head = messageType + " " + version + " " + senderId + " " + fileId + " " + chunkNo + " " + replicationDeg + " ";
+
+        int size = head.length();
+        byte[] data = new byte[size+4];
+        System.arraycopy(head.getBytes(), 0, data, 0, head.getBytes().length);
+
+        data[size] = CR; size++;
+        data[size] = LF; size++;
+        data[size] = CR; size++;
+        data[size] = LF;
+
+        return data;
     }
 
     public String getMessageType() {
