@@ -1,7 +1,11 @@
 package communication;
 
+import storage.Chunk;
+
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.Vector;
+import java.util.concurrent.Semaphore;
 
 /**
  * Created by Antonio on 06-03-2016.
@@ -24,6 +28,30 @@ public class Server {
      * Channel of the Multicast Data Recovery channel
      */
     private Channel MDR_Channel;
+
+    /**
+     * Maximum number of requests the semaphore can allow to access at the same time
+     */
+    private static final int MAX_AVAILABLE = 1;
+
+    /**
+     * Number of requests is the server still dealing with.
+     */
+    private int number_threads_running = 0;
+    /**
+     * The number_threads_running is accessible to all of the threads,
+     * so a semaphore is required to keep the data consistent
+     */
+    private final Semaphore nThreadsSem = new Semaphore(MAX_AVAILABLE, true);
+
+    /**
+     * The chunks that the peer is handling.
+     */
+    private Vector<Chunk> chunks = new Vector<Chunk>();
+    /**
+     * The chunks is accessible to all of the threads, so a semaphore is required to keep the data consistent
+     */
+    private final Semaphore chunksSem = new Semaphore(MAX_AVAILABLE, true);
 
     /**
      * Only one sever is allowed.
@@ -62,14 +90,7 @@ public class Server {
          * This method has a loop to check the channels. In case of data received, it'll call the handler.
          */
         public void run() {
-            for (int i = 0; i < 2; i++) {
-                System.out.println(channel.getType());
-                try {
-                    Thread.sleep((long) Math.random()%1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
+
         }
     }
 
@@ -97,7 +118,6 @@ public class Server {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        System.out.println("passou!");
     }
 
     /**
@@ -119,6 +139,37 @@ public class Server {
                 MDR_Channel = socket;
                 break;
         }
+    }
+
+    /**
+     * For each request a new thread is created. So, it's necessary to keep
+     * track of them with precaution.
+     */
+    private void incNumberThreads() {
+        try {
+            nThreadsSem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        number_threads_running++;
+        nThreadsSem.release();
+    }
+
+    /**
+     * For each request a new thread is created and when it ends the count needs to be updated.
+     * So, it's necessary to keep track of them with precaution.
+     */
+    public void decNumberThreads() {
+        try {
+            nThreadsSem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        number_threads_running--;
+        if (number_threads_running < 0) {
+            number_threads_running = 0;
+        }
+        nThreadsSem.release();
     }
 
     public void setId(String id1) {

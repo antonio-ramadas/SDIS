@@ -108,6 +108,11 @@ public class Message {
         return messageArray;
     }
 
+    @Override
+    public String toString() {
+        return header.toString() + " " +  body.toString();
+    }
+
     /**
      * Store the message in its variables
      * @param m the match of the message

@@ -71,6 +71,11 @@ public class Header {
         return data;
     }
 
+    @Override
+    public String toString() {
+        return "Header: " + messageType + " " + version + " " + senderId + " " + fileId + " " + chunkNo + " " + replicationDeg;
+    }
+
     public String getMessageType() {
         return messageType;
     }

@@ -15,6 +15,11 @@ public class Body {
         this.data = data.clone();
     }
 
+    @Override
+    public String toString() {
+        return "Body size: " + data.length + " bytes";
+    }
+
     public byte[] getData() {
         return data;
     }

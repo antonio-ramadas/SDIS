@@ -24,11 +24,17 @@ public class Peer {
             return;
         }
 
+
+        //from here below there are only tests
+        //this is for debug ONLY
+        System.err.println("--------------");
+        System.err.println("Debug section!");
+        System.err.println("--------------");
         Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 iiiidata".getBytes());
         m.decompose();
         m.compose();
 
-        /*
+
         MessageDigest md = null;
         try {
             md = MessageDigest.getInstance("SHA-256");
@@ -40,9 +46,9 @@ public class Peer {
             e.printStackTrace();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-        }*/
+        }
 
-        /*Path path = Paths.get("files/chunks/caminho.txt");
+        Path path = Paths.get("files/chunks/caminho.txt");
         try {
             byte[] data = Files.readAllBytes(path);
         } catch (IOException e) {
@@ -62,6 +68,6 @@ public class Peer {
         //para já só cria diretórios
         //não faz mais nada
         //método de teste
-        Backup.getInstance();*/
+        Backup.getInstance();
     }
 }
