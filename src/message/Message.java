@@ -76,7 +76,8 @@ public class Message {
                 m.group(MatchGroup.CHUNK_NUMBER.ordinal()),
                 m.group(MatchGroup.REPLICATION_DEGREE.ordinal()));
 
-        body = new Body(Arrays.copyOfRange(message,m.end(),message.length));
+        if (m.end() <  message.length)
+            body = new Body(Arrays.copyOfRange(message,m.end(),message.length));
     }
 
     public Header getHeader() {
