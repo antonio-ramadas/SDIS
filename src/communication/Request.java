@@ -3,9 +3,7 @@ package communication;
 import console.MessageCenter;
 import message.Message;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 
 /**
