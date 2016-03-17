@@ -83,9 +83,6 @@ public class Server {
         public void run() {
             //loop
 
-            //ignore messages of the peer
-            //must the check the server id of each message
-
             //increase for each request
             incNumberThreads();
 
@@ -173,5 +170,23 @@ public class Server {
 
     public void setId(String id1) {
         id = id1;
+    }
+
+    /**
+     * Compare the id of the peer with the given id.
+     * This method is thread safe
+     * @param id1 id to be compared
+     * @return true if the ids are the same, false otherwise
+     */
+    public boolean sameId(String id1) {
+        boolean comparison = false;
+        try {
+            nThreadsSem.acquire();
+            comparison = id.equals(id1);
+            nThreadsSem.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return comparison;
     }
 }

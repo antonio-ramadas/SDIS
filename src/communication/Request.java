@@ -56,8 +56,11 @@ public class Request {
 
             Message message = new Message(data);
             if (message.decompose()) {
-                MessageCenter.output("Message successfully received and decomposed: " + message);
-                chooseProtocol(message);
+                if (!Server.getInstance().sameId(message.getHeader().getSenderId()))
+                {
+                    MessageCenter.output("Message successfully received and decomposed: " + message);
+                    chooseProtocol(message);
+                }
             } else {
                 MessageCenter.error("Message received with errors!");
             }
