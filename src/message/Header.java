@@ -47,6 +47,15 @@ public class Header {
      */
     private String replicationDeg;
 
+    /**
+     * Constructor. Receives all the information through the arguments.
+     * @param messageType type of message
+     * @param version version of the message
+     * @param senderId id of the sender
+     * @param fileId id of the file
+     * @param chunkNo number (id) of the chunk
+     * @param replicationDeg degree of replication of the chunk
+     */
     public Header(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg) {
         this.messageType = messageType;
         this.version = version;
@@ -56,6 +65,10 @@ public class Header {
         this.replicationDeg = replicationDeg;
     }
 
+    /**
+     * Converts the header to an array of bytes following the specification
+     * @return header converted into byte array
+     */
     public byte[] bytify() {
         String head = messageType + " " + version + " " + senderId + " " + fileId + " " + chunkNo + " " + replicationDeg + " ";
 
