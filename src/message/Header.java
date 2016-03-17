@@ -5,7 +5,13 @@ package message;
  */
 public class Header {
 
+    /**
+     * byte code of Carriage Return
+     */
     private final static byte CR = 0x0D;
+    /**
+     * NL line feed, new line
+     */
     private final static byte LF = 0x0A;
 
     /**
