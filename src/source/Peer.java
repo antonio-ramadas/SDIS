@@ -3,11 +3,12 @@ package source;
 import communication.Request;
 import communication.Server;
 import communication.Sockets;
+import console.MessageCenter;
 import message.Message;
 import storage.Backup;
+import storage.Chunk;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +32,7 @@ public class Peer {
         System.err.println("--------------");
         System.err.println("Debug section!");
         System.err.println("--------------");
+        Backup.getInstance().start();
         Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 iiiidata".getBytes());
         m.decompose();
         m.compose();
@@ -49,12 +51,12 @@ public class Peer {
             e.printStackTrace();
         }
 
-        Path path = Paths.get("files/chunks/caminho.txt");
-        try {
-            byte[] data = Files.readAllBytes(path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+//        Path path = Paths.get("files/chunks/caminho.txt");
+//        try {
+//            byte[] data = Files.readAllBytes(path);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
 
         Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
         Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,

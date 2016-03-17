@@ -83,6 +83,9 @@ public class Server {
         public void run() {
             //loop
 
+            //ignore messages of the peer
+            //must the check the server id of each message
+
             //increase for each request
             incNumberThreads();
 
