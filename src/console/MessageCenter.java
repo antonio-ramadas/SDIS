@@ -10,6 +10,7 @@ public class MessageCenter {
      */
     public static void error(String msg) {
         System.err.println(msg);
+        System.err.flush();
     }
 
     /**
@@ -18,5 +19,6 @@ public class MessageCenter {
      */
     public static void output(String msg) {
         System.out.println(msg);
+        System.out.flush();
     }
 }

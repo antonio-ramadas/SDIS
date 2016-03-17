@@ -141,14 +141,17 @@ public class Message {
      */
     public byte[] compose() {
         byte[] headerArray = header.bytify();
-        byte[] bodyArray = body.getData();
+        if (body != null) {
+            byte[] bodyArray = body.getData();
+            byte[] messageArray = new byte[headerArray.length + bodyArray.length];
 
-        byte[] messageArray = new byte[headerArray.length + bodyArray.length];
+            System.arraycopy(headerArray, 0, messageArray, 0, headerArray.length);
+            System.arraycopy(bodyArray, 0, messageArray, headerArray.length, bodyArray.length);
 
-        System.arraycopy(headerArray, 0, messageArray, 0, headerArray.length);
-        System.arraycopy(bodyArray, 0, messageArray, headerArray.length, bodyArray.length);
+            return messageArray;
+        }
 
-        return messageArray;
+        return headerArray;
     }
 
     @Override
