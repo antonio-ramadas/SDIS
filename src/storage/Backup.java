@@ -157,12 +157,11 @@ public class Backup {
      */
     private void parseInfo(Path filePath, String fileId, String chunkId) {
 
-        String minimumReplication_str = null, actualReplication_str = null;
+        String minimumReplication_str = null;
 
         try (InputStream in = Files.newInputStream(filePath);
              BufferedReader reader =
                      new BufferedReader(new InputStreamReader(in))) {
-            actualReplication_str = reader.readLine();
             minimumReplication_str = reader.readLine();
             reader.close();
         } catch (IOException x) {
@@ -173,13 +172,13 @@ public class Backup {
 
         //chunk already exists?
         if (chk != null) {
-            chk.setReplications(actualReplication_str, minimumReplication_str);
+            chk.setReplications(minimumReplication_str);
         } else {
             //file already exists?
             if (chunks.get(fileId) == null) {
                 chunks.put(fileId, new HashMap<String,Chunk>());
             }
-            chunks.get(fileId).put(chunkId, new Chunk(chunkId, fileId, actualReplication_str, minimumReplication_str));
+            chunks.get(fileId).put(chunkId, new Chunk(chunkId, fileId, minimumReplication_str));
         }
     }
 

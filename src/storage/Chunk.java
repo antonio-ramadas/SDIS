@@ -13,11 +13,6 @@ public class Chunk {
     public static int MAX_SIZE = 70000;
 
     /**
-     * The total number of replications of the chunk.
-     */
-    private int totalReplications;
-
-    /**
      * The minimun number allowed of replications of the chunk.
      */
     private int minimumReplication;
@@ -49,15 +44,14 @@ public class Chunk {
     }
 
     /**
-     * Construtor of the chunk. It misses the data.
+     * Constructor of the chunk. It misses the data.
      * @param id id of the chunk
      * @param fileId id of the file whose chunk belongs
-     * @param actualDegree last count of how many times this chunk is stored
-     * @param minimumDegree minimun replication this chunk allow
+     * @param minimumDegree minimum replication this chunk allow
      */
-    public Chunk(String id, String fileId, String actualDegree, String minimumDegree) {
+    public Chunk(String id, String fileId, String minimumDegree) {
         this(id, fileId);
-        setReplications(actualDegree, minimumDegree);
+        setReplications(minimumDegree);
     }
 
     /**
@@ -73,20 +67,11 @@ public class Chunk {
 
     /**
      * Sets the replications numbers
-     * @param actualDegree total replications of the chunk
      * @param minimumDegree minimum replications of the chunk
+     *
      */
-    public void setReplications(String actualDegree, String minimumDegree) {
+    public void setReplications(String minimumDegree) {
         minimumReplication = Integer.parseInt(minimumDegree);
-        totalReplications = Integer.parseInt(actualDegree);
-    }
-
-    public int getTotalReplications() {
-        return totalReplications;
-    }
-
-    public void setTotalReplications(int totalReplications) {
-        this.totalReplications = totalReplications;
     }
 
     public int getMinimumReplication() {
