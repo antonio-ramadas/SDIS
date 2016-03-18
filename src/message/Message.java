@@ -14,7 +14,7 @@ public class Message {
     /**
      * The regex pattern of the message.
      */
-    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64}) (\\d{1,6}) (\\d) ....";
+    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64}) (\\d{1,6}) (\\d) \r\n\r\n";
 
     /**
      * Each message has a header.

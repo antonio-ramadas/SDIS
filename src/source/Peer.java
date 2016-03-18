@@ -33,11 +33,11 @@ public class Peer {
         System.err.println("Debug section!");
         System.err.println("--------------");
         Backup.getInstance().start();
-        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 iiiidata".getBytes());
+        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n".getBytes());
         m.decompose();
         m.compose();
         System.out.println(m);
-        m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 iiii".getBytes());
+        m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n".getBytes());
         m.decompose();
         m.compose();
         System.out.println(m);
