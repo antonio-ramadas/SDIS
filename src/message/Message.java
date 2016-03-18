@@ -156,7 +156,10 @@ public class Message {
 
     @Override
     public String toString() {
-        return header.toString() + " " +  body.toString();
+        if (body != null) {
+            return header.toString() + " " +  body.toString();
+        }
+        return header.toString();
     }
 
     /**
