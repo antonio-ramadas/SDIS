@@ -23,19 +23,19 @@ public class Header {
      * This is the type of the message.
      * Is encoded as a variable length sequence of ASCII characters.
      */
-    private String messageType;
+    private String messageType = null;
 
     /**
      * This is the version of the protocol.
      * It is a three ASCII char sequence with the format <n>'.'<m>, where <n> and <m> are the ASCII codes of digits.
      */
-    private String version;
+    private String version = null;
 
     /**
      * This is the id of the server that has sent the message.
      * This is encoded as a variable length sequence of ASCII digits.
      */
-    private String senderId;
+    private String senderId = null;
 
     /**
      * This is the file identifier for the backup service.
@@ -43,20 +43,47 @@ public class Header {
      * As its name indicates its length is 256 bit, i.e. 32 bytes, and should be encoded as a 64 ASCII character sequence.
      * The encoding is as follows: each byte of the hash value is encoded by the two ASCII characters corresponding to the hexadecimal representation of that byte.
      */
-    private String fileId;
+    private String fileId = null;
 
     /**
      * This field together with the FileId specifies a chunk in the file.
      * It is encoded as a sequence of ASCII characters corresponding to the decimal representation of that number, with the most significant digit first.
      * The length of this field is variable, but should not be larger than 6 chars.
      */
-    private String chunkNo;
+    private String chunkNo = null;
 
     /**
      * This field contains the desired replication degree of the chunk.
      * This is a digit, thus allowing a replication degree of up to 9.
      */
-    private String replicationDeg;
+    private String replicationDeg = null;
+
+    /**
+     * Constructor. Receives all the information through the arguments.
+     * @param messageType type of message
+     * @param version version of the message
+     * @param senderId id of the sender
+     * @param fileId id of the file
+     */
+    public Header(String messageType, String version, String senderId, String fileId) {
+        this.messageType = messageType;
+        this.version = version;
+        this.senderId = senderId;
+        this.fileId = fileId;
+    }
+
+    /**
+     * Constructor. Receives all the information through the arguments.
+     * @param messageType type of message
+     * @param version version of the message
+     * @param senderId id of the sender
+     * @param fileId id of the file
+     * @param chunkNo number (id) of the chunk
+     */
+    public Header(String messageType, String version, String senderId, String fileId, String chunkNo) {
+        this(messageType, version, senderId, fileId);
+        this.chunkNo = chunkNo;
+    }
 
     /**
      * Constructor. Receives all the information through the arguments.
@@ -68,11 +95,7 @@ public class Header {
      * @param replicationDeg degree of replication of the chunk
      */
     public Header(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg) {
-        this.messageType = messageType;
-        this.version = version;
-        this.senderId = senderId;
-        this.fileId = fileId;
-        this.chunkNo = chunkNo;
+        this(messageType, version, senderId, fileId, chunkNo);
         this.replicationDeg = replicationDeg;
     }
 
@@ -81,18 +104,19 @@ public class Header {
      * @return header converted into byte array
      */
     public byte[] bytify() {
-        String head = messageType + " " + version + " " + senderId + " " + fileId + " " + chunkNo + " " + replicationDeg + " ";
+        String head;
+        String initial = messageType + " " + version + " " + senderId + " " + fileId + " ";
+        if (chunkNo == null) {
+            head = initial;
+        } else if (replicationDeg == null) {
+            head = initial + chunkNo + " ";
+        } else {
+            head = initial + chunkNo + " " + replicationDeg + " ";
+        }
 
-        int size = head.length();
-        byte[] data = new byte[size+4];
-        System.arraycopy(head.getBytes(), 0, data, 0, head.getBytes().length);
+        String header = head + "\r\n\r\n";
 
-        data[size] = CR; size++;
-        data[size] = LF; size++;
-        data[size] = CR; size++;
-        data[size] = LF;
-
-        return data;
+        return header.getBytes();
     }
 
     @Override

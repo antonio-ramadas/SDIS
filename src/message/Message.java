@@ -14,7 +14,7 @@ public class Message {
     /**
      * The regex pattern of the message.
      */
-    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64}) (\\d{1,6}) (\\d) \r\n\r\n";
+    private final static String PATTERN = "((?i)\\w+) (\\d\\.\\d) (\\w+) ([A-Fa-f0-9]{64})( \\d{1,6})?( \\d)? \r\n\r\n";
 
     /**
      * Each message has a header.
@@ -167,15 +167,22 @@ public class Message {
      * @param m the match of the message
      */
     private void structurize(Matcher m) {
-        header = new Header(m.group(MatchGroup.MESSAGE_TYPE.ordinal()),
-                m.group(MatchGroup.VERSION.ordinal()),
-                m.group(MatchGroup.SENDER_ID.ordinal()),
-                m.group(MatchGroup.FILE_ID.ordinal()),
-                m.group(MatchGroup.CHUNK_NUMBER.ordinal()),
-                m.group(MatchGroup.REPLICATION_DEGREE.ordinal()));
+        header = new Header(m.group(MatchGroup.MESSAGE_TYPE.ordinal()).trim(),
+                m.group(MatchGroup.VERSION.ordinal()).trim(),
+                m.group(MatchGroup.SENDER_ID.ordinal()).trim(),
+                m.group(MatchGroup.FILE_ID.ordinal()).trim());
 
-        if (m.end() <  message.length)
-            body = new Body(Arrays.copyOfRange(message,m.end(),message.length));
+        if (m.group(MatchGroup.CHUNK_NUMBER.ordinal()) != null) {
+            header.setChunkNo(m.group(MatchGroup.CHUNK_NUMBER.ordinal()).trim());
+
+            if (m.group(MatchGroup.REPLICATION_DEGREE.ordinal()) != null) {
+                header.setReplicationDeg(m.group(MatchGroup.REPLICATION_DEGREE.ordinal()).trim());
+            }
+        }
+
+        if (m.end() <  message.length) {
+            body = new Body(Arrays.copyOfRange(message, m.end(), message.length));
+        }
     }
 
     public Header getHeader() {

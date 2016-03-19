@@ -5,6 +5,8 @@ import communication.Server;
 import communication.Sockets;
 import console.MessageCenter;
 import message.Message;
+import message.MessageTypes;
+import protocols.ChunkBackup;
 import storage.Backup;
 import storage.Chunk;
 
@@ -42,15 +44,18 @@ public class Peer {
         System.err.println("--------------");
         System.err.println("Debug section!");
         System.err.println("--------------");
-        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n\rjhg\n".getBytes());
+        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\njhg\n".getBytes());
         m.decompose();
         m.compose();
         System.out.println(m);
-        m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n".getBytes());
+        m = new Message("PUTCHUNK 1.0 antonio 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nasdasd".getBytes());
         m.decompose();
         m.compose();
         System.out.println(m);
+        Server.getInstance().send(MessageTypes.CHUNK, "PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nsasaas".getBytes());
 
+        ChunkBackup CB = new ChunkBackup(m);
+        CB.send();
 
         MessageDigest md = null;
         try {

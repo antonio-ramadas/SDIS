@@ -83,6 +83,18 @@ public class Chunk {
     }
 
     /**
+     * Constructor with all the information required
+     * @param chunkNo chunk id (it's the same as its numbering)
+     * @param fileId file id of the chunk
+     * @param replicationDeg minimum replication degree required by the initiator peer
+     * @param data data of the chunk
+     */
+    public Chunk(String chunkNo, String fileId, String replicationDeg, byte[] data) {
+        this(chunkNo, fileId, replicationDeg);
+        this.data = data.clone();
+    }
+
+    /**
      * Checks if this chunk can be deleted
      * @return true if this chunk has enough copies spread across the peers, otherwise returns false.
      */
@@ -90,7 +102,7 @@ public class Chunk {
         boolean deletable = false;
         try {
             chunkSem.acquire();
-            deletable = minimumReplication >= replications.size();
+            deletable = replications.size() >= minimumReplication;
             chunkSem.release();
         } catch (InterruptedException e) {
             e.printStackTrace();

@@ -54,4 +54,9 @@ public class ChunkRestore implements Connection {
     public void handleReceived() {
 
     }
+
+    @Override
+    public void send() {
+
+    }
 }

@@ -37,12 +37,15 @@ public class Channel {
         type = type1;
 
         try {
-            address = InetAddress.getByName(getIp());
+            address = InetAddress.getByName(ip);
+            initializeSocket();
+            socket.joinGroup(address);
         } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
-        initializeSocket();
     }
 
     /**

@@ -1,0 +1,12 @@
+nome do ficheiro com extensao
+file id
+tamanho em bytes
+---------------------------------
+nome do ficheiro com extensao
+file id
+tamanho em bytes
+---------------------------------
+nome do ficheiro com extensao
+file id
+tamanho em bytes
+---------------------------------

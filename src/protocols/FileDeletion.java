@@ -31,4 +31,9 @@ public class FileDeletion implements Connection{
     public void handleReceived() {
 
     }
+
+    @Override
+    public void send() {
+
+    }
 }

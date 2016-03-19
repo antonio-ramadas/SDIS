@@ -11,6 +11,8 @@ public interface Connection {
      */
     void handleReceived();
 
-    //wait for the interface to implement this method
-    //void send();
+    /**
+     * Send the message. Each protocol should follow its procedure
+     */
+    void send();
 }

@@ -1,14 +1,14 @@
 package communication;
 
+import console.MessageCenter;
 import message.Body;
 import message.Header;
+import message.MessageTypes;
 import storage.Backup;
-import storage.Chunk;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.UnknownHostException;
-import java.util.Vector;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -57,6 +57,60 @@ public class Server {
         return ourInstance;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    /**
+     * Send a message to the group
+     * @param type type of message
+     * @param bytify byte array to be sent
+     */
+    public void send(MessageTypes type, byte[] bytify) {
+        Channel channel = getChannel(type);
+        if (channel == null) {
+            MessageCenter.error("Bad type of message chosen: " + type);
+            return;
+        }
+
+        try {
+            nThreadsSem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        DatagramPacket packet = new DatagramPacket(bytify, bytify.length,
+                channel.getAddress(), Integer.parseInt(channel.getPort()));
+        try {
+            channel.getSocket().send(packet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        nThreadsSem.release();
+    }
+
+    /**
+     * Get the channel from the type of message
+     * @param type type of message (PUTCHUNK, STORED, ...)
+     * @return channel if found, null otherwise
+     */
+    private Channel getChannel(MessageTypes type) {
+        switch (type) {
+            //MDB
+            case PUTCHUNK:
+                return MDB_Channel;
+            //MC
+            case STORED:
+            case DELETE:
+            case REMOVED:
+                return MC_Channel;
+            //MDR
+            case GETCHUNK:
+            case CHUNK:
+                return MDR_Channel;
+        }
+        return null;
+    }
+
     /**
      * Each channel is handled by a separated thread
      */
@@ -71,13 +125,6 @@ public class Server {
         public MyThread(Channel channel1) {
             // store parameter for later user
             channel = channel1;
-            try {
-                channel.getSocket().joinGroup(channel.getAddress());
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
 
         /**
@@ -197,6 +244,6 @@ public class Server {
      * @return true if the ids are the same, false otherwise
      */
     public boolean sameId(String id1) {
-        return id.equals(id1);
+        return getId().equals(id1);
     }
 }

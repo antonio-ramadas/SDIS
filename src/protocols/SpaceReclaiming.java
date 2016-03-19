@@ -31,4 +31,9 @@ public class SpaceReclaiming implements Connection {
     public void handleReceived() {
 
     }
+
+    @Override
+    public void send() {
+
+    }
 }
