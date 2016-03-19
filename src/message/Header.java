@@ -13,6 +13,11 @@ public class Header {
      * NL line feed, new line
      */
     private final static byte LF = 0x0A;
+    /**
+     * Maximum size the header can have. It's not specified how much
+     * it should be, but this is probably more than enough.
+     */
+    public final static int MAX_SIZE = 256;
 
     /**
      * This is the type of the message.

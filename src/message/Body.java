@@ -10,6 +10,10 @@ public class Body {
      * If null, data needs to be read from the storage (file system).
      */
     private byte[] data = null;
+    /**
+     * Max size of a chunk (64KB).
+     */
+    public static int MAX_SIZE = 64000;
 
     public Body(byte[] data) {
         this.data = data.clone();

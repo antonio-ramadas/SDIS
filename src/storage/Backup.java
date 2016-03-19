@@ -70,7 +70,13 @@ public class Backup {
             MessageCenter.output("Directory Created!");
             return;
         } else {
+            try {
+                chunksSem.acquire();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             readChunks();
+            chunksSem.release();
         }
     }
 

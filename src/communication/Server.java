@@ -1,8 +1,12 @@
 package communication;
 
+import message.Body;
+import message.Header;
+import storage.Backup;
 import storage.Chunk;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -82,11 +86,22 @@ public class Server {
          */
         public void run() {
             //loop
+            while (true) {
+                byte buf[] = new byte[Header.MAX_SIZE + Body.MAX_SIZE];
+                DatagramPacket msgPacket = new DatagramPacket(buf, buf.length);
 
-            //increase for each request
-            incNumberThreads();
+                try {
+                    channel.getSocket().receive(msgPacket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
-            //calls the request handler
+                //increase for each request
+                incNumberThreads();
+
+                //calls the request handler
+                new Request(msgPacket);
+            }
         }
     }
 
@@ -107,13 +122,16 @@ public class Server {
         Thread mdr_thread = new Thread(mdr);
         mdr_thread.start();
 
-        try {
+        Backup.getInstance().start();
+
+        //uncomment to wait for the threads
+        /*try {
             mc_thread.join();
             mdb_thread.join();
             mdr_thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     /**
@@ -179,14 +197,6 @@ public class Server {
      * @return true if the ids are the same, false otherwise
      */
     public boolean sameId(String id1) {
-        boolean comparison = false;
-        try {
-            nThreadsSem.acquire();
-            comparison = id.equals(id1);
-            nThreadsSem.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return comparison;
+        return id.equals(id1);
     }
 }

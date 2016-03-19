@@ -27,13 +27,22 @@ public class Peer {
         }
 
 
+        Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,
+                args[Arguments.MC_IP.ordinal()], args[Arguments.MC_PORT.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_CHANNEL,
+                args[Arguments.MDB_IP.ordinal()], args[Arguments.MDB_PORT.ordinal()]);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_RECOVERY,
+                args[Arguments.MDR_IP.ordinal()], args[Arguments.MDR_PORT.ordinal()]);
+
+        Server.getInstance().start();
+
         //from here below there are only tests
         //this is for debug ONLY
         System.err.println("--------------");
         System.err.println("Debug section!");
         System.err.println("--------------");
-        Backup.getInstance().start();
-        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n".getBytes());
+        Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\n\rjhg\n".getBytes());
         m.decompose();
         m.compose();
         System.out.println(m);
@@ -62,16 +71,6 @@ public class Peer {
 //        } catch (IOException e) {
 //            e.printStackTrace();
 //        }
-
-        Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,
-                args[Arguments.MC_IP.ordinal()], args[Arguments.MC_PORT.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_CHANNEL,
-                args[Arguments.MDB_IP.ordinal()], args[Arguments.MDB_PORT.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_RECOVERY,
-                args[Arguments.MDR_IP.ordinal()], args[Arguments.MDR_PORT.ordinal()]);
-
-        Server.getInstance().start();
 
         //para já só cria diretórios
         //não faz mais nada
