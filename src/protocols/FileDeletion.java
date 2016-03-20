@@ -42,10 +42,6 @@ public class FileDeletion implements Connection{
      * Se receber, responde e não apaga.
      */
 
-    //nao exige resposta
-    //mandar 2 vezes para a rede com intervalo de 1 segundo
-    //apagar do computador e do hash map
-
     @Override
     public void handleReceived() {
         if (Backup.getInstance().isFileStored(message.getHeader().getFileId())) {
