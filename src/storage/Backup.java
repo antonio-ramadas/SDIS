@@ -476,8 +476,6 @@ public class Backup {
      * @param chunkId id of the chunk
      */
     private void parseInfo(Path filePath, String fileId, String chunkId) {
-        
-        addChunkToMinimize(fileId, chunkId);
 
         String minimumReplication_str = null;
 
@@ -490,6 +488,10 @@ public class Backup {
             x.printStackTrace();
         }
 
+        //if it isn't the only copy in this peer...
+        if (Integer.parseInt(minimumReplication_str) > 1) {
+            addChunkToMinimize(fileId, chunkId);
+        }
         Chunk chk = getChunk(fileId, chunkId);
 
         //chunk already exists?
