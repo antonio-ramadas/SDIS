@@ -83,7 +83,7 @@ public class ChunkBackup implements Connection {
 
         //while there isn't a minimum number of replications
         //and the number of messages sent doesn't exceeds the maximum
-        while (Backup.getInstance().getChunkCount() < minimum && count >= 0) {
+        while (Backup.getInstance().getMyChunksBackingUpCount(message.getHeader()) < minimum && count > 0) {
             count--;
             Server.getInstance().send(MessageTypes.PUTCHUNK, messageArray);
             MessageCenter.output("Sent: " + message);
@@ -95,9 +95,11 @@ public class ChunkBackup implements Connection {
             timeout *= 2;
         }
 
-        if (Backup.getInstance().getChunkCount() < minimum) {
+        if (Backup.getInstance().getMyChunksBackingUpCount(message.getHeader()) < minimum) {
             MessageCenter.error("Failed to back up: " + message);
         }
+
+        Backup.getInstance().removeChunkBackingUp(message.getHeader());
     }
 
     /**

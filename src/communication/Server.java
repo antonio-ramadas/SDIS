@@ -8,6 +8,7 @@ import storage.Backup;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.Semaphore;
 
@@ -109,6 +110,40 @@ public class Server {
                 return MDR_Channel;
         }
         return null;
+    }
+
+    /**
+     * Send a message to a specific address and port
+     * @param type type of message
+     * @param msg message to be sent in a byte array
+     * @param senderAddress address (ip) to send
+     * @param senderPort port to send
+     */
+    public void send(MessageTypes type, byte[] msg, String senderAddress, int senderPort) {
+        Channel channel = getChannel(type);
+        if (channel == null) {
+            MessageCenter.error("Bad type of message chosen: " + type);
+            return;
+        }
+
+        try {
+            nThreadsSem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        DatagramPacket packet = null;
+        try {
+            packet = new DatagramPacket(msg, msg.length,
+                    InetAddress.getByName(senderAddress), senderPort);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+        try {
+            channel.getSocket().send(packet);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        nThreadsSem.release();
     }
 
     /**

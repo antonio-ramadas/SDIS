@@ -7,6 +7,7 @@ import console.MessageCenter;
 import message.Message;
 import message.MessageTypes;
 import protocols.ChunkBackup;
+import protocols.ChunkRestore;
 import storage.Backup;
 import storage.Chunk;
 
@@ -55,7 +56,27 @@ public class Peer {
         Server.getInstance().send(MessageTypes.CHUNK, "PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nsasaas".getBytes());
 
         ChunkBackup CB = new ChunkBackup(m);
-        CB.send();
+        //CB.send();
+
+        m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
+        m.decompose();
+        ChunkRestore CR = new ChunkRestore(m);
+        //CR.send();
+
+        m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200121daad9 55555 \r\n\r\n".getBytes());
+        m.decompose();
+        CR = new ChunkRestore(m);
+        //CR.send();
+
+        m = new Message("GETCHUNK 1.9 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
+        m.decompose();
+        CR = new ChunkRestore(m);
+        //CR.send();
+
+        m = new Message("GETCHUNK 1.9 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200122daad9 55555 \r\n\r\n".getBytes());
+        m.decompose();
+        CR = new ChunkRestore(m);
+        //CR.send();
 
         MessageDigest md = null;
         try {

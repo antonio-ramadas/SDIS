@@ -67,11 +67,45 @@ public class Message {
     }
 
     /**
+     * Constructor of the message header.
+     * @param messageType Type of message (PUTCHUNK, STORED, ...)
+     * @param version Version of the message (x.y)
+     * @param senderId ID of the server
+     * @param fileId ID of the file
+     * @param chunkNo Number of the chunk
+     * @param data body of the message
+     */
+    public Message(String messageType, String version, String senderId, String fileId, String chunkNo, byte[] data) {
+        header = new Header(messageType, version, senderId, fileId, chunkNo);
+        body = new Body(data);
+    }
+
+    /**
+     * Constructor of the message header.
+     * @param messageType Type of message (PUTCHUNK, STORED, ...)
+     * @param version Version of the message (x.y)
+     * @param senderId ID of the server
+     * @param fileId ID of the file
+     * @param chunkNo Number of the chunk
+     */
+    public Message(String messageType, String version, String senderId, String fileId, String chunkNo) {
+        header = new Header(messageType, version, senderId, fileId, chunkNo);
+    }
+
+    /**
      * Create an object with the message string
      * @param message the message received (including header and body)
      */
     public Message(byte[] message) {
         this.message = message;
+    }
+
+    /**
+     * Creates a body given its data
+     * @param data data of the body
+     */
+    public void createBody(byte[] data) {
+        body = new Body(data);
     }
 
     /**

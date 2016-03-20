@@ -24,6 +24,17 @@ public class Chunk {
     private byte[] data = null;
 
     /**
+     * Variable used in the Chunk restore protocol
+     */
+    private boolean restored = false;
+
+    /**
+     * Variable used in the Chunk restore protocol
+     * to name to decide if the enhancement should be used
+     */
+    private boolean enhacementBR = false;
+
+    /**
      * Chunk's id.
      */
     private String id;
@@ -100,14 +111,9 @@ public class Chunk {
      */
     public boolean canBeDeleted() {
         boolean deletable = false;
-        try {
-            chunkSem.acquire();
-            deletable = replications.size() >= minimumReplication;
-            chunkSem.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
+        acquire();
+        deletable = replications.size() >= minimumReplication;
+        release();
         return deletable;
     }
 
@@ -118,13 +124,9 @@ public class Chunk {
      */
     public void addReplication(String foreignServerId) {
         if (!exists(foreignServerId)) {
-            try {
-                chunkSem.acquire();
-                replications.add(foreignServerId);
-                chunkSem.release();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            acquire();
+            replications.add(foreignServerId);
+            release();
         }
     }
 
@@ -134,21 +136,24 @@ public class Chunk {
      * @return true if it exists, false otherwise.
      */
     private boolean exists(String foreignServerId) {
-        try {
-            chunkSem.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        acquire();
 
         for (String server : replications) {
             if (server.equals(foreignServerId)) {
-                chunkSem.release();
+                release();
                 return true;
             }
         }
 
-        chunkSem.release();
+        release();
         return false;
+    }
+
+    /**
+     * Release the semaphore chunkSem
+     */
+    private void release() {
+        chunkSem.release();
     }
 
     /**
@@ -157,13 +162,9 @@ public class Chunk {
      */
     public boolean isComplete() {
         boolean completed = false;
-        try {
-            chunkSem.acquire();
-            completed = data != null && minimumReplication > DEFAULT_MINIMUM_VALUE;
-            chunkSem.release();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        acquire();
+        completed = data != null && minimumReplication > DEFAULT_MINIMUM_VALUE;
+        release();
 
         return completed;
     }
@@ -174,38 +175,80 @@ public class Chunk {
      *
      */
     public void setReplications(String minimumDegree) {
+        acquire();
         minimumReplication = Integer.parseInt(minimumDegree);
+        release();
+    }
+
+    /**
+     * Acquire the semaphore chunkSem
+     */
+    private void acquire() {
+        try {
+            chunkSem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getMinimumReplication() {
-        return minimumReplication;
-    }
-
-    public void setMinimumReplication(int minimumReplication) {
-        this.minimumReplication = minimumReplication;
+        int minimum = 0;
+        acquire();
+        minimum = minimumReplication;
+        release();
+        return minimum;
     }
 
     public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
+        acquire();
+        String chunkId = id;
+        release();
+        return chunkId;
     }
 
     public String getFileId() {
-        return fileId;
-    }
-
-    public void setFileId(String fileId) {
-        this.fileId = fileId;
+        acquire();
+        String file = fileId;
+        release();
+        return file;
     }
 
     public byte[] getData() {
-        return data;
+        acquire();
+        byte[] bytes = data.clone();
+        release();
+        return bytes;
     }
 
     public void setData(byte[] data) {
+        acquire();
         this.data = data.clone();
+        release();
+    }
+
+    public boolean wasRestored() {
+        acquire();
+        boolean wasIt = restored;
+        release();
+        return wasIt;
+    }
+
+    public void setRestored(boolean restored) {
+        acquire();
+        this.restored = restored;
+        release();
+    }
+
+    public boolean isEnhacementBR() {
+        acquire();
+        boolean enhacement = enhacementBR;
+        release();
+        return enhacement;
+    }
+
+    public void setEnhacementBR(boolean enhacementBR) {
+        acquire();
+        this.enhacementBR = enhacementBR;
+        release();
     }
 }

@@ -65,15 +65,20 @@ public class Backup {
     private Map<String,Map<String,Chunk> > chunks = new HashMap<String,Map<String,Chunk> >();
 
     /**
-     * Name of the chunk I'm backing up.
+     * The key is the name of the chunk I'm backing up.
      * Syntax (the same of the filenames):
      * [file_id] [space] [chunk_id]
+     * The value is the id of the peers that are backing up my chunk
      */
-    private String myChunkBackingUp = "";
+    private Map<String,Vector<String> > myChunksBackingUp = new HashMap<String, Vector<String> >();
+
     /**
-     * Id of the peers that are backing up my chunk
+     * The key is the name of the chunk I'm backing up.
+     * Syntax (the same of the filenames):
+     * [file_id] [space] [chunk_id]
+     * The value is the chunk received
      */
-    private Vector<String> myChunkCount = new Vector<String>();
+    private Map<String,Chunk> myChunksRestored = new HashMap<String,Chunk>();
 
     /**
      * Only one file explorer handler is allowed.
@@ -85,14 +90,63 @@ public class Backup {
     }
 
     /**
+     * Check if the chunk received is to this peer
+     * @param chunk chunk received
+     * @return true if it is, false otherwise
+     */
+    public boolean isItMyChunkRestored(Chunk chunk) {
+        acquire();
+        boolean isMine = myChunksRestored.containsKey(chunk.getFileId() + " " + chunk.getId());
+        release();
+
+        return isMine;
+    }
+
+    /**
+     * Check if a chunk was received by the chunk restore protocol
+     * @param id id of the chunk
+     * @return true if received, false otherwise
+     */
+    public boolean receivedChunk(String id) {
+        acquire();
+        boolean received = myChunksRestored.get(id) != null;
+        release();
+        return received;
+    }
+
+    /**
+     * Add a new element to the hash map of the chunk restore protocol
+     * @param head header of the message
+     */
+    public void createNewRestore(Header head) {
+        String id = createId(head);
+        acquire();
+        myChunksRestored.put(id, null);
+        release();
+    }
+
+    /**
+     * Create an id based on an header of a message
+     * @param head header of the message
+     * @return id created with the message's header
+     */
+    private String createId(Header head) {
+        return head.getFileId() + " " + head.getChunkNo();
+    }
+
+    /**
      * Get the size of the vector myChunkCount
+     * @param head header of the message
      * @return myChunkCount's size
      */
-    public int getChunkCount() {
+    public int getMyChunksBackingUpCount(Header head) {
         int size = 0;
-        acquire();
-        size = myChunkCount.size();
-        release();
+        String id = createId(head);
+        if (isItMyChunk(id)) {
+            acquire();
+            size = myChunksBackingUp.get(id).size();
+            release();
+        }
 
         return size;
     }
@@ -105,8 +159,7 @@ public class Backup {
      */
     public void setNewChunkBackUp(String file, String chunk) {
         acquire();
-        myChunkBackingUp = file + " " + chunk;
-        myChunkCount = new Vector<String>();
+        myChunksBackingUp.put(file + " " + chunk, new Vector<String>());
         release();
     }
 
@@ -131,7 +184,7 @@ public class Backup {
     private boolean isItMyChunk(String id) {
         boolean isMine = false;
         acquire();
-        isMine = myChunkBackingUp.equals(id);
+        isMine = myChunksBackingUp.containsKey(id);
         release();
 
         return isMine;
@@ -144,10 +197,11 @@ public class Backup {
      * @return true if this header belongs to my chunk, flase otherwise
      */
     public boolean addPeerBackingUpMyChunk(Header head) {
-        if (isItMyChunk(head.getFileId() + " " + head.getChunkNo())) {
+        String id = createId(head);
+        if (isItMyChunk(id)) {
             acquire();
-            if (!myChunkCount.contains(head.getSenderId())) {
-                myChunkCount.add(head.getSenderId());
+            if (!myChunksBackingUp.get(id).contains(head.getSenderId())) {
+                myChunksBackingUp.get(id).add(head.getSenderId());
             }
             release();
             return true;
@@ -399,6 +453,24 @@ public class Backup {
     }
 
     /**
+     * Returns a chunk of the hash map given the keys.
+     * It's a thread safe method.
+     * @param fileId file id of the chunk
+     * @param chunkId id of the chunk
+     * @return null if not found, Chunk otherwise
+     */
+    public Chunk getChunkThreadSafe(String fileId, String chunkId) {
+        Chunk c = null;
+        acquire();
+        if (chunks.get(fileId) != null && chunks.get(fileId).get(chunkId) != null) {
+            c = chunks.get(fileId).get(chunkId);
+        }
+        release();
+
+        return c;
+    }
+
+    /**
      * Returns a chunk of the hash map given the keys
      * @param fileId file id of the chunk
      * @param chunkId id of the chunk
@@ -530,6 +602,31 @@ public class Backup {
      */
     private String createFileName(Chunk chunk) {
         return chunk.getFileId() + " " + chunk.getId();
+    }
+
+    /**
+     * Removes a chunk from backing up protocol
+     * @param header header of the message
+     */
+    public void removeChunkBackingUp(Header header) {
+        String id = createId(header);
+        if (isItMyChunk(id)) {
+            acquire();
+            myChunksBackingUp.remove(id);
+            release();
+        }
+    }
+
+    /**
+     * Stores a chunk received
+     * @param chunk chunk received
+     */
+    public void addChunkRestored(Chunk chunk) {
+        if (isItMyChunkRestored(chunk)) {
+            acquire();
+            myChunksRestored.put(chunk.getFileId() + " " + chunk.getId(), chunk);
+            release();
+        }
     }
 
     /*private Backup() {

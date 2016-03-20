@@ -86,6 +86,7 @@ public class Request {
             case GETCHUNK:
                 ChunkRestore restore1 = new ChunkRestore(message, address, port);
                 restore1.handleReceived();
+                break;
             case CHUNK:
                 ChunkRestore restore2 = new ChunkRestore(message);
                 restore2.handleReceived();
