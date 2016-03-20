@@ -2,6 +2,7 @@ package communication;
 
 import console.MessageCenter;
 import message.Message;
+import message.MessageTypes;
 import protocols.ChunkBackup;
 import protocols.ChunkRestore;
 import protocols.FileDeletion;
@@ -56,7 +57,12 @@ public class Request {
 
             Message message = new Message(data);
             if (message.decompose()) {
-                if (!Server.getInstance().sameId(message.getHeader().getSenderId()))
+                //the message is from another peer
+                //or is from this peer, but this message is due to the
+                //space reclaiming subprotocol
+                if ((!Server.getInstance().sameId(message.getHeader().getSenderId())) ||
+                        (Server.getInstance().sameId(message.getHeader().getSenderId()) &&
+                                message.getMessageType() == MessageTypes.PUTCHUNK))
                 {
                     MessageCenter.output("Message successfully received and decomposed: " + message);
                     chooseProtocol(message);

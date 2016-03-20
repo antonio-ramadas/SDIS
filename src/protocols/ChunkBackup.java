@@ -108,7 +108,9 @@ public class ChunkBackup implements Connection {
      */
     private void processPutChunkMsg(Chunk chunk) {
 
-        if (Backup.getInstance().addChunk(chunk)) {
+        //can't store chunks from messages started by its own
+        if (!Server.getInstance().sameId(message.getHeader().getSenderId()) &&
+                Backup.getInstance().addChunk(chunk)) {
             //there's enough space to store and it doesn't exist
             sleep();
             if (chunk.canBeDeleted()) {
@@ -124,6 +126,7 @@ public class ChunkBackup implements Connection {
         } else if (Backup.getInstance().isStored(chunk)) {
             sleep();
             sendStoredMsg(chunk);
+            Backup.getInstance().getChunkThreadSafe(chunk.getFileId(), chunk.getId()).setRestored(true);
         }
     }
 

@@ -35,6 +35,12 @@ public class Chunk {
     private boolean enhacementBR = false;
 
     /**
+     * Variable used int the chunk backup subprotocol
+     * for the space reclaiming subprotocol
+     */
+    private boolean required = false;
+
+    /**
      * Chunk's id.
      */
     private String id;
@@ -239,16 +245,39 @@ public class Chunk {
         release();
     }
 
-    public boolean isEnhacementBR() {
+    public boolean isEnhancementBR() {
         acquire();
         boolean enhacement = enhacementBR;
         release();
         return enhacement;
     }
 
-    public void setEnhacementBR(boolean enhacementBR) {
+    public void setEnhancementBR(boolean enhancementBR) {
         acquire();
-        this.enhacementBR = enhacementBR;
+        this.enhacementBR = enhancementBR;
+        release();
+    }
+
+    public boolean wasRequired() {
+        acquire();
+        boolean wasIt = required;
+        release();
+        return wasIt;
+    }
+
+    public void setRequired(boolean required) {
+        acquire();
+        this.required = required;
+        release();
+    }
+
+    /**
+     * Removes a given peer id from the list of replications
+     * @param senderId id of the peer
+     */
+    public void removePeer(String senderId) {
+        acquire();
+        replications.remove(senderId);
         release();
     }
 }

@@ -108,7 +108,7 @@ public class ChunkRestore implements Connection {
                 chunk = Backup.getInstance().getChunkThreadSafe(message.getHeader().getFileId(),
                         message.getHeader().getChunkNo());
                 chunk.setRestored(false);
-                chunk.setEnhacementBR(message.getHeader().getVersion().equals(VERSION_ENHANCEMENT));
+                chunk.setEnhancementBR(message.getHeader().getVersion().equals(VERSION_ENHANCEMENT));
                 sleep();
                 if (!chunk.wasRestored()) {
                     sendChunkMsg(chunk);
@@ -136,7 +136,7 @@ public class ChunkRestore implements Connection {
      */
     private void sendChunkMsg(Chunk chunk) {
         String version = VERSION_NORMAL;
-        if (chunk.isEnhacementBR()) {
+        if (chunk.isEnhancementBR()) {
             useEnhancement = true;
             version = VERSION_ENHANCEMENT;
         }

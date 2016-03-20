@@ -56,7 +56,7 @@ public class Peer {
         Server.getInstance().send(MessageTypes.CHUNK, "PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nsasaas".getBytes());
 
         ChunkBackup CB = new ChunkBackup(m);
-        //CB.send();
+        CB.send();
 
         m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
         m.decompose();

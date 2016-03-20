@@ -51,7 +51,7 @@ public class FileDeletion implements Connection{
 
     @Override
     public void send() {
-        byte[] messageArray = message.compose();
+        byte[] messageArray = message.getHeader().bytify();
 
         for (int i = 0; i < MAX_NUMBER_MSG; i++) {
             Server.getInstance().send(MessageTypes.DELETE, messageArray);

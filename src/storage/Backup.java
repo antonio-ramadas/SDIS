@@ -1,5 +1,6 @@
 package storage;
 
+import communication.Server;
 import console.MessageCenter;
 import message.Header;
 import message.Message;
@@ -170,7 +171,7 @@ public class Backup {
      * @param head header of the message
      */
     public void addPeerStore(Header head) {
-        if (isStored(head.getFileId(), head.getChunkNo())) {
+        if (!Server.getInstance().sameId(head.getSenderId()) && isStored(head.getFileId(), head.getChunkNo())) {
             acquire();
             chunks.get(head.getFileId()).get(head.getChunkNo()).addReplication(head.getSenderId());
             release();
@@ -548,6 +549,9 @@ public class Backup {
     public void deleteChunk(Chunk chunk) {
         acquire();
         chunks.get(chunk.getFileId()).remove(chunk.getId());
+        if (chunks.get(chunk.getFileId()).isEmpty()) {
+            chunks.remove(chunk.getFileId());
+        }
         release();
     }
 
