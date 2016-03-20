@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -629,54 +630,51 @@ public class Backup {
         }
     }
 
-    /*private Backup() {
-        File dir = new File("files/chunks");
-        Boolean success = dir.mkdir();
-        if (success) {
-            System.out.println("Directory Created!");
-        } else {
-            try {
-                Files.walk(Paths.get("files")).forEach(filePath -> {
-                    if (Files.isRegularFile(filePath)) {
-                        System.out.println(filePath);
-                    }
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+    /**
+     * Check if a file is stored in the system
+     * @param fileId id of the file to be checked
+     * @return true if stored, false otherwise
+     */
+    public boolean isFileStored(String fileId) {
+        acquire();
+        boolean stored = chunks.containsKey(fileId);
+        release();
+        return stored;
+    }
 
-        dir = new File("files/backup");
-        success = dir.mkdir();
-        if (success) {
-            System.out.println("Directory Created!");
-        } else {
-            try {
-                Files.walk(Paths.get("files")).forEach(filePath -> {
-                    if (Files.isRegularFile(filePath)) {
-                        System.out.println(filePath);
-                    }
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+    /**
+     * Delete all the chunks from the system and the hash map
+     * of a given file id
+     * @param fileId id of the file to be deleted
+     */
+    public void deleteFile(String fileId) {
+        Vector<String> chunkIds = new Vector<String>();
+        acquire();
+        for (String key : chunks.get(fileId).keySet()) {
+            chunkIds.add(key);
         }
+        chunks.remove(fileId);
+        release();
 
-        dir = new File("files/reconstruct");
-        success = dir.mkdir();
-        if (success) {
-            System.out.println("Directory Created!");
-        } else {
-            try {
-                Files.walk(Paths.get("files")).forEach(filePath -> {
-                    if (Files.isRegularFile(filePath)) {
-                        System.out.println(filePath);
-                    }
-                });
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        String path = PATH + "chunks/" + fileId + " ";
+        for (String id : chunkIds) {
+            deleteChunkFromStore(path + id + "." + FILE_DATA_EXTENSION);
+            deleteChunkFromStore(path + id + "." + FILE_INFO_EXTENSION);
         }
-    }*/
+    }
+
+    /**
+     * Delete a file given its path
+     * @param path path to the file
+     */
+    private void deleteChunkFromStore(String path) {
+        File file = new File(path);
+
+        if(file.delete()){
+            System.out.println("Deleted file: " + file.getName());
+        }else{
+            System.out.println("Failed to delete file " + file.getName());
+        }
+    }
 
 }
