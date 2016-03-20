@@ -4,6 +4,7 @@ import communication.Server;
 import console.MessageCenter;
 import message.Header;
 import message.Message;
+import protocols.SpaceReclaiming;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -58,6 +59,13 @@ public class Backup {
      * The chunks is accessible to all of the threads, so a semaphore is required to keep the data consistent
      */
     private final Semaphore chunksSem = new Semaphore(MAX_AVAILABLE, true);
+
+    /**
+     * This map will keep track of stored chunks.
+     * The key is the file id. Each key of each value is the id of the chunk.
+     * Each value is a chunk.
+     */
+    private Map<String,Map<String,Boolean> > chunksStored = new HashMap<String,Map<String,Boolean> >();
 
     /**
      * This map will keep track of stored chunks.
@@ -326,7 +334,47 @@ public class Backup {
             readChunks();
             countSpace();
             release();
+
+            minimizeSpace();
         }
+    }
+
+    /**
+     * Minimizes the space used by the backup service
+     */
+    private void minimizeSpace() {
+        for (Map.Entry<String, Map<String,Boolean> > fileIds : chunksStored.entrySet()) {
+            for (Map.Entry<String,Boolean> chunkIds : fileIds.getValue().entrySet()) {
+                String fileId = fileIds.getKey();
+                String chunkId = chunkIds.getKey();
+                Message msg = new Message("REMOVED", "2.0", Server.getInstance().getId(), fileId,
+                        chunkId);
+                SpaceReclaiming sr = new SpaceReclaiming(msg);
+                sr.send();
+                acquire();
+                //if it wasn't restored
+                if (chunks.get(fileId) != null &&
+                        chunks.get(fileId).get(chunkId) != null &&
+                        !chunks.get(fileId).get(chunkId).wasRestored()) {
+                    release();
+                    //then can be deleted
+                    deleteChunk(chunks.get(fileId).get(chunkId));
+
+                    acquire();
+
+                    String path = PATH + "chunks/" + fileId + " ";
+                    deleteChunkFromStore(path + chunkId + "." + FILE_DATA_EXTENSION);
+                    deleteChunkFromStore(path + chunkId + "." + FILE_INFO_EXTENSION);
+
+                    MessageCenter.output("Chunk deleted with file id " + fileId +
+                            " and chunk id " + chunkId);
+                }
+                release();
+            }
+        }
+
+        //empty the space
+        chunksStored = null;
     }
 
     /**
@@ -428,6 +476,8 @@ public class Backup {
      * @param chunkId id of the chunk
      */
     private void parseInfo(Path filePath, String fileId, String chunkId) {
+        
+        addChunkToMinimize(fileId, chunkId);
 
         String minimumReplication_str = null;
 
@@ -452,6 +502,18 @@ public class Backup {
             }
             chunks.get(fileId).put(chunkId, new Chunk(chunkId, fileId, minimumReplication_str));
         }
+    }
+
+    /**
+     * Add a chunk for further analysis. It'll be checked if it can be deleted
+     * @param fileId id of the chunk's file
+     * @param chunkId chunk's id
+     */
+    private void addChunkToMinimize(String fileId, String chunkId) {
+        if (!chunksStored.containsKey(fileId)) {
+            chunksStored.put(fileId, new HashMap<String, Boolean>());
+        }
+        chunksStored.get(fileId).put(chunkId, true);
     }
 
     /**
