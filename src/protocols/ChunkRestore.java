@@ -121,7 +121,7 @@ public class ChunkRestore implements Connection {
                 Backup.getInstance().getChunkThreadSafe(chunk.getFileId(), chunk.getId()).setRestored(true);
                 return;
             }
-            if (message.getHeader().getVersion().equals(VERSION_NORMAL) &&
+            if (!message.getHeader().getVersion().equals(VERSION_ENHANCEMENT) &&
                     Backup.getInstance().isItMyChunkRestored(chunk)) {
                 MessageCenter.error("Received asked chunk: " + message);
                 chunk.setData(message.getBody().getData());
