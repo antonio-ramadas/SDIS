@@ -58,11 +58,7 @@ public class Request {
             Message message = new Message(data);
             if (message.decompose()) {
                 //the message is from another peer
-                //or is from this peer, but this message is due to the
-                //space reclaiming subprotocol
-                if ((!Server.getInstance().sameId(message.getHeader().getSenderId())) ||
-                        (Server.getInstance().sameId(message.getHeader().getSenderId()) &&
-                                message.getMessageType() == MessageTypes.PUTCHUNK))
+                if (!Server.getInstance().sameId(message.getHeader().getSenderId()))
                 {
                     MessageCenter.output("Message successfully received and decomposed: " + message);
                     chooseProtocol(message);

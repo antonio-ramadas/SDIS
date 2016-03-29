@@ -59,7 +59,7 @@ public class ChunkBackup implements Connection {
         if (MessageTypes.PUTCHUNK == message.getMessageType()) {
             //if can't store there's no need to wait
             Chunk chunk = new Chunk(message.getHeader().getChunkNo(), message.getHeader().getFileId(),
-                    message.getHeader().getReplicationDeg(), message.getBody().getData());
+                    message.getHeader().getReplicationDeg(), message.getHeader().getSenderId(), message.getBody().getData());
 
             processPutChunkMsg(chunk);
         } else {

@@ -74,7 +74,7 @@ public class SpaceReclaiming implements Connection {
      * @param chunk chunk to backed up
      */
     private void startBackUpProtocol(Chunk chunk) {
-        Message msg = new Message("PUTCHUNK", VERSION, Server.getInstance().getId(), chunk.getFileId(),
+        Message msg = new Message("PUTCHUNK", VERSION, chunk.getSenderId(), chunk.getFileId(),
                 chunk.getId(), Integer.toString(chunk.getMinimumReplication()), chunk.getData());
 
         MessageCenter.output("Space Reclaiming protocol started the chunk backup subprotocol with the message: " + msg);

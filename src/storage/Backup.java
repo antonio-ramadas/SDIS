@@ -26,7 +26,7 @@ public class Backup {
     /**
      * Path of the folders and files
      */
-    private final static String PATH = "files/";
+    private final static String PATH = "files/" + Server.getInstance().getId() + "/";
 
     /**
      * fileid + [space] + chunkid + "."
@@ -325,7 +325,12 @@ public class Backup {
      * Initializes the hash map with the chunks of the system.
      */
     public void start() {
-        File dir = new File(PATH + "chunks");
+        createDirectories();
+        File dir = new File(PATH + "backup");
+        dir.mkdir();
+        dir = new File(PATH + "restore");
+        dir.mkdir();
+        dir = new File(PATH + "chunks");
         Boolean success = dir.mkdir();
         if (success) {
             MessageCenter.output("Directory Created!");
@@ -336,6 +341,24 @@ public class Backup {
             release();
 
             minimizeSpace();
+        }
+    }
+
+    /**
+     * Create the folders of PATH
+     */
+    private void createDirectories() {
+        String folders[] = PATH.split("/");
+        for (int i = 0; i < folders.length; i++) {
+            String folder = folders[0];
+            for (int j = 1; j <= i; j++) {
+                folder += ("/" + folders[j]);
+            }
+            File dir = new File(folder);
+            Boolean success = dir.mkdir();
+            if (success) {
+                MessageCenter.output("Directory Created!");
+            }
         }
     }
 
@@ -478,11 +501,13 @@ public class Backup {
     private void parseInfo(Path filePath, String fileId, String chunkId) {
 
         String minimumReplication_str = null;
+        String senderId_srt = null;
 
         try (InputStream in = Files.newInputStream(filePath);
              BufferedReader reader =
                      new BufferedReader(new InputStreamReader(in))) {
             minimumReplication_str = reader.readLine();
+            senderId_srt = reader.readLine();
             reader.close();
         } catch (IOException x) {
             x.printStackTrace();
@@ -497,12 +522,13 @@ public class Backup {
         //chunk already exists?
         if (chk != null) {
             chk.setReplications(minimumReplication_str);
+            chk.setSenderId(senderId_srt);
         } else {
             //file already exists?
             if (chunks.get(fileId) == null) {
                 chunks.put(fileId, new HashMap<String,Chunk>());
             }
-            chunks.get(fileId).put(chunkId, new Chunk(chunkId, fileId, minimumReplication_str));
+            chunks.get(fileId).put(chunkId, new Chunk(chunkId, fileId, minimumReplication_str, senderId_srt));
         }
     }
 
@@ -637,7 +663,8 @@ public class Backup {
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(PATH + "chunks/" + createFileName(chunk) + "." + FILE_INFO_EXTENSION, "UTF-8");
-            writer.print(chunk.getMinimumReplication());
+            writer.println(chunk.getMinimumReplication());
+            writer.print(chunk.getSenderId());
             writer.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();

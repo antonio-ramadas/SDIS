@@ -61,22 +61,22 @@ public class Peer {
         m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
         m.decompose();
         ChunkRestore CR = new ChunkRestore(m);
-        //CR.send();
+        CR.send();
 
         m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200121daad9 55555 \r\n\r\n".getBytes());
         m.decompose();
         CR = new ChunkRestore(m);
-        //CR.send();
+        CR.send();
 
         m = new Message("GETCHUNK 1.9 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
         m.decompose();
         CR = new ChunkRestore(m);
-        //CR.send();
+        CR.send();
 
         m = new Message("GETCHUNK 1.9 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200122daad9 55555 \r\n\r\n".getBytes());
         m.decompose();
         CR = new ChunkRestore(m);
-        //CR.send();
+        CR.send();
 
         MessageDigest md = null;
         try {

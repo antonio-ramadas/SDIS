@@ -51,6 +51,11 @@ public class Chunk {
     private String fileId;
 
     /**
+     * ID of the sender of the chunk
+     */
+    private String senderId;
+
+    /**
      * Stores the servers' id without replications
      */
     private Vector<String> replications = new Vector<String>();
@@ -109,6 +114,31 @@ public class Chunk {
     public Chunk(String chunkNo, String fileId, String replicationDeg, byte[] data) {
         this(chunkNo, fileId, replicationDeg);
         this.data = data.clone();
+    }
+
+    /**
+     * Constructor with all the information required
+     * @param chunkId chunk id (it's the same as its numbering)
+     * @param fileId file id of the chunk
+     * @param minimumReplication_str minimum replication degree required by the initiator peer
+     * @param senderId_srt id of the sender of the chunk
+     */
+    public Chunk(String chunkId, String fileId, String minimumReplication_str, String senderId_srt) {
+        this(chunkId, fileId, minimumReplication_str);
+        senderId = senderId_srt;
+    }
+
+    /**
+     * Constructor with all the information required
+     * @param chunkNo chunk id (it's the same as its numbering)
+     * @param fileId file id of the chunk
+     * @param replicationDeg minimum replication degree required by the initiator peer
+     * @param senderId id of the sender of the chunk
+     * @param data data of the chunk
+     */
+    public Chunk(String chunkNo, String fileId, String replicationDeg, String senderId, byte[] data) {
+        this(chunkNo, fileId, replicationDeg, data);
+        this.senderId = senderId;
     }
 
     /**
@@ -279,5 +309,13 @@ public class Chunk {
         acquire();
         replications.remove(senderId);
         release();
+    }
+
+    public String getSenderId() {
+        return senderId;
+    }
+
+    public void setSenderId(String senderId) {
+        this.senderId = senderId;
     }
 }
