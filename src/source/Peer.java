@@ -10,6 +10,9 @@ import protocols.ChunkBackup;
 import protocols.ChunkRestore;
 import storage.Backup;
 import storage.Chunk;
+import test.TestApp;
+import threads.*;
+
 
 import java.io.*;
 import java.net.*;
@@ -17,6 +20,7 @@ import console.MessageCenter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.rmi.RemoteException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -26,7 +30,15 @@ import java.util.List;
  */
 public class Peer {
 
-    private static int port;
+    private static int server_port;
+    private static String server_id;
+    private static String MC_IP;
+    private static String MC_PORT;
+    private static String MDB_IP;
+    private static String MDB_PORT;
+    private static String MDR_IP;
+    private static String MDR_PORT;
+
 
     public static void main(String args[]) throws IOException {
 
@@ -37,11 +49,18 @@ public class Peer {
         Socket socket = null;
 
         try{
-            srvSocket = new ServerSocket(port);
+            srvSocket = new ServerSocket(server_port);
         } catch (IOException e){
-            MessageCenter.output("Could not listen on port: " + port);
-            System.exit(-1);
+            MessageCenter.output("Could not listen on port: " + server_port);
         }
+
+        Server.getInstance().setId(server_id);
+        Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL, MC_IP, MC_PORT);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_CHANNEL, MDB_IP, MDB_PORT);
+        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_RECOVERY, MDR_IP, MDR_PORT);
+        Server.getInstance().start();
+
+
 
         boolean end = false;
         while(!end){
@@ -49,8 +68,7 @@ public class Peer {
             try {
                 socket = srvSocket.accept();
             } catch (IOException e) {
-                MessageCenter.error("Accept failed: " + port);
-                System.exit(1);
+                MessageCenter.error("Accept failed: " + server_port);
             }
 
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -61,31 +79,27 @@ public class Peer {
 
 
             String sub_protocol = splitRequest[0];
-            String response;
 
             if (sub_protocol.equals("BACKUP")){
                 String opnd_1 = splitRequest[1];
                 int opnd_2 = Integer.parseInt(splitRequest[2]);
-                response = backup(opnd_1, opnd_2);
+                backup(opnd_1, opnd_2);
             }
             else if (sub_protocol.equals("RESTORE")){
                 String opnd_1 = splitRequest[1];
-                response = restore(opnd_1);
+                restore(opnd_1);
             }
             else if (sub_protocol.equals("DELETE")){
                 String opnd_1 = splitRequest[1];
-                response = delete(opnd_1);
+                delete(opnd_1);
             }
             else if (sub_protocol.equals("SPACE")){
                 int opnd_1 = Integer.parseInt(splitRequest[1]);
-                response = space(opnd_1);
+                space(opnd_1);
             }
             else {
-                response = "Without response";
+                out.println("Error reading subprotocol");
             }
-
-            out.println(response);
-            MessageCenter.output(response);
 
             out.close();
             in.close();
@@ -96,103 +110,56 @@ public class Peer {
     }
 
     private static boolean validateArgs(String[] args){
-        if (args.length != 1){
-            MessageCenter.output("Usage: java Server <port>");
+        if (args.length != Arguments.NUMBER_ALLOWED_OF_ARGUMENTS.ordinal()){
+            MessageCenter.output("Usage: Peer <server_id> <MC_IP> <MC_PORT> <MDB_IP> <MDB_PORT> <MDR_IP> <MDR_PORT>");
             return false;
         }
         else {
-            port = Integer.parseInt(args[0]);
-            MessageCenter.output("Port: " + port);
+            server_id = args[Arguments.SERVER_ID.ordinal()];
+            server_port = Integer.parseInt(args[Arguments.SERVER_ID.ordinal()]);
+            server_port += 8000;
+            MC_IP = args[Arguments.MC_IP.ordinal()];
+            MC_PORT = args[Arguments.MC_PORT.ordinal()];
+            MDB_IP = args[Arguments.MDB_IP.ordinal()];
+            MDB_PORT = args[Arguments.MDB_PORT.ordinal()];
+            MDR_IP = args[Arguments.MDR_IP.ordinal()];
+            MDR_PORT = args[Arguments.MDR_PORT.ordinal()];
+            MessageCenter.output("Peer " + server_id + " " + MC_IP + " " + MC_PORT + " " + MDB_IP + " " + MDB_PORT + " " + MDR_IP + " " + MDR_PORT);
             return true;
         }
     }
 
-    private static String backup(String filePath, int replicationDegree){
-        return "backup " + filePath + " " + replicationDegree;
+    private static void backup(String filePath, int replicationDegree) throws RemoteException {
+        File file = new File(filePath);
+        new Thread(new backupThread(file, replicationDegree)).start();
     }
 
-    private static String delete(String filePath){
-        return "delete " + filePath;
-    }
-
-    private static String restore(String filePath){
-        return "restore " + filePath;
-    }
-
-    private static String space(int amountOfSpace){
-        return "space " + amountOfSpace;
-    }
-
-    // Corrigir
-    public static void splitFile(File f) throws IOException {
-        int partCounter = 1;
-
-        int sizeOfFiles = 64 * 1024;// 64 Kb
-        byte[] buffer = new byte[sizeOfFiles];
-
-        try (BufferedInputStream bis = new BufferedInputStream(
-                new FileInputStream(f))) {//try-with-resources to ensure closing stream
-            String name = f.getName();
-
-            int tmp = 0;
-            while ((tmp = bis.read(buffer)) > 0) {
-                //write each chunk of data into separate file with different number in name
-                File newFile = new File(f.getParent(), name + "."
-                        + String.format("%03d", partCounter++));
-                try (FileOutputStream out = new FileOutputStream(newFile)) {
-                    out.write(buffer, 0, tmp);//tmp is chunk size
-                }
-            }
-        }
-    }
-
-    // Corrigir esta parte
-    public static void mergeFiles(List<File> files, File into)
-            throws IOException {
-        try (BufferedOutputStream mergingStream = new BufferedOutputStream(
-                new FileOutputStream(into))) {
-            for (File f : files) {
-                Files.copy(f.toPath(), mergingStream);
-            }
-        }
-    }
-
-        /*
-        if (args.length != Arguments.NUMBER_ALLOWED_OF_ARGUMENTS.ordinal()) {
-            System.out.println("Peer <server_id> <MC_IP> <MC_PORT> <MDB_IP> <MDB_PORT> <MDR_IP> <MDR_PORT>");
-            return;
-        }
-
-
-        Server.getInstance().setId(args[Arguments.SERVER_ID.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_CHANNEL,
-                args[Arguments.MC_IP.ordinal()], args[Arguments.MC_PORT.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_CHANNEL,
-                args[Arguments.MDB_IP.ordinal()], args[Arguments.MDB_PORT.ordinal()]);
-        Server.getInstance().createChannel(Sockets.MULTICAST_DATA_RECOVERY,
-                args[Arguments.MDR_IP.ordinal()], args[Arguments.MDR_PORT.ordinal()]);
-
-        Server.getInstance().start();
-
-        //from here below there are only tests
-        //this is for debug ONLY
-        System.err.println("--------------");
-        System.err.println("Debug section!");
-        System.err.println("--------------");
+    /*
         Message m = new Message("PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\njhg\n".getBytes());
         m.decompose();
         m.compose();
-        System.out.println(m);
+        MessageCenter.output(m.toString());
         m = new Message("PUTCHUNK 1.0 antonio 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nasdasd".getBytes());
         m.decompose();
         m.compose();
-        System.out.println(m);
+        MessageCenter.output(m.toString());
         Server.getInstance().send(MessageTypes.CHUNK, "PUTCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 1 \r\n\r\nsasaas".getBytes());
 
         ChunkBackup CB = new ChunkBackup(m);
         CB.send();
+    */
 
-        m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
+    private static void delete(String filePath) throws RemoteException{
+        File file = new File(filePath);
+        new Thread(new deleteThread(file)).start();
+    }
+
+    private static void restore(String filePath) throws RemoteException{
+        File file = new File(filePath);
+        new Thread(new restoreThread(file)).start();
+    }
+    /*
+        Message m = new Message("GETCHUNK 1.0 teste 7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069 55555 \r\n\r\n".getBytes());
         m.decompose();
         ChunkRestore CR = new ChunkRestore(m);
         CR.send();
@@ -211,6 +178,34 @@ public class Peer {
         m.decompose();
         CR = new ChunkRestore(m);
         CR.send();
+    */
+
+    private static void space(int amountOfSpace){
+        new Thread(new spaceThread(amountOfSpace)).start();
+    }
+
+
+
+    // Corrigir esta parte
+    public static void mergeFiles(List<File> files, File into)
+            throws IOException {
+        try (BufferedOutputStream mergingStream = new BufferedOutputStream(
+                new FileOutputStream(into))) {
+            for (File f : files) {
+                Files.copy(f.toPath(), mergingStream);
+            }
+        }
+    }
+
+        /*
+
+        //from here below there are only tests
+        //this is for debug ONLY
+        System.err.println("--------------");
+        System.err.println("Debug section!");
+        System.err.println("--------------");
+
+
 
         MessageDigest md = null;
         try {
