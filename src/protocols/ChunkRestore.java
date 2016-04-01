@@ -56,10 +56,6 @@ public class ChunkRestore implements Connection {
      * The address of the peer who sent the request.
      */
     private String senderAddress;
-    /**
-     * The port of the peer who sent the request.
-     */
-    private int senderPort;
 
     /**
      * Constructor of Chunk Backup Protocol
@@ -85,12 +81,10 @@ public class ChunkRestore implements Connection {
      * The address and port will be useful for the enhancement.
      * @param message message received from the channels
      * @param address sender address (string style)
-     * @param port sender port
      */
-    public ChunkRestore(Message message, String address, int port) {
+    public ChunkRestore(Message message, String address) {
         this(message);
         this.senderAddress = address;
-        this.senderPort = port;
     }
 
     /**
@@ -123,7 +117,7 @@ public class ChunkRestore implements Connection {
             }
             if (!message.getHeader().getVersion().equals(VERSION_ENHANCEMENT) &&
                     Backup.getInstance().isItMyChunkRestored(chunk)) {
-                MessageCenter.error("Received asked chunk: " + message);
+                MessageCenter.output("Received asked chunk: " + message);
                 chunk.setData(message.getBody().getData());
                 Backup.getInstance().addChunkRestored(chunk);
             }
@@ -151,7 +145,7 @@ public class ChunkRestore implements Connection {
             MessageCenter.output("First enhancement chunk message sent: " + msg);
             msg.getHeader().setVersion(VERSION_NORMAL);
             msg.createBody(chunk.getData());
-            Server.getInstance().send(MessageTypes.CHUNK, msg.compose(), senderAddress, senderPort);
+            Server.getInstance().send(MessageTypes.CHUNK, msg.compose(), senderAddress, Integer.parseInt(message.getHeader().getSenderId()));
             MessageCenter.output("Second enhancement chunk message sent: " + msg);
         }
     }
@@ -188,7 +182,7 @@ public class ChunkRestore implements Connection {
      */
     private void sleep() {
         try {
-            Thread.sleep((long) (Math.random()%SLEEP_TIME));
+            Thread.sleep((long) ((Math.random()*1000)%SLEEP_TIME));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

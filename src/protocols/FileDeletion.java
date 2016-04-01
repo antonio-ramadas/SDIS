@@ -21,7 +21,7 @@ public class FileDeletion implements Connection{
     /**
      * Maximum number of messages allowed to be sent
      */
-    private final static int MAX_NUMBER_MSG = 2;
+    private final static int MAX_NUMBER_MSG = 5;
 
     /**
      * Maximum sleep time (1 second)

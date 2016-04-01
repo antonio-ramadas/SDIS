@@ -31,6 +31,14 @@ public class Channel {
      */
     private InetAddress address;
 
+    Channel() {
+    	try {
+			socket = new MulticastSocket();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+
     Channel(Sockets type1, String ip1, String port1) {
         ip = ip1;
         port = port1;
@@ -78,4 +86,8 @@ public class Channel {
     public InetAddress getAddress() {
         return address;
     }
+
+	public int getSocketPort() {
+		return socket.getLocalPort();
+	}
 }

@@ -10,6 +10,12 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileOwnerAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.UserPrincipal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,6 +23,8 @@ import java.util.Vector;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javafx.util.Pair;
 
 /**
  * Created by Antonio on 06-03-2016.
@@ -90,6 +98,13 @@ public class Backup {
      */
     private Map<String,Chunk> myChunksRestored = new HashMap<String,Chunk>();
 
+
+    /**
+     * This map will keep track of the files backed up.
+     * The key is the file id. The value is BackedUp.
+     */
+    private Map<String,BackedUp> myFilesBackedUp = new HashMap<String,BackedUp>();
+
     /**
      * Only one file explorer handler is allowed.
      */
@@ -122,6 +137,18 @@ public class Backup {
         boolean received = myChunksRestored.get(id) != null;
         release();
         return received;
+    }
+    
+    /**
+     * Returns a chunk restored
+     * @param id key of the hash map
+     * @return restored chunk
+     */
+    public Chunk getChunkRestoredAndDelete(String id) {
+        acquire();
+        Chunk chk = myChunksRestored.get(id);
+        release();
+        return chk;
     }
 
     /**
@@ -278,7 +305,7 @@ public class Backup {
      */
     public boolean isStored(Chunk c) {
         acquire();
-
+        
         boolean exists = chunks.get(c.getFileId()) != null &&
                 chunks.get(c.getFileId()).get(c.getId()) != null;
 
@@ -290,7 +317,7 @@ public class Backup {
     /**
      * Acquires a place at the semaphore chunksSem.
      */
-    private void acquire() {
+    public void acquire() {
         try {
             chunksSem.acquire();
         } catch (InterruptedException e) {
@@ -301,7 +328,7 @@ public class Backup {
     /**
      * Releases a place at the semaphore chunksSem.
      */
-    private void release() {
+    public void release() {
         chunksSem.release();
     }
 
@@ -334,13 +361,53 @@ public class Backup {
         Boolean success = dir.mkdir();
         if (success) {
             MessageCenter.output("Directory Created!");
+            acquire();
+            readFilesBackedUp();
+            release();
         } else {
             acquire();
             readChunks();
             countSpace();
+            readFilesBackedUp();
             release();
 
             minimizeSpace();
+        }
+    }
+
+    /**
+     * Read the files backed up before by the peer
+     */
+    private void readFilesBackedUp() {
+        String path = PATH + "backup/files.txt";
+
+        File file = new File(path);
+        if(!file.exists()) {
+            try {
+                boolean newFile = file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
+
+        try {
+            BufferedReader br = new BufferedReader(new FileReader(PATH + "backup/files.txt"));
+            String garbage = br.readLine();
+
+            while (garbage != null) {
+                String name = br.readLine();
+                String fileId = br.readLine();
+                int size = Integer.parseInt(br.readLine());
+                BackedUp bu = new BackedUp(fileId, size);
+                myFilesBackedUp.put(name, bu);
+
+                garbage = br.readLine();
+            }
+
+            br.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -745,17 +812,19 @@ public class Backup {
     public void deleteFile(String fileId) {
         Vector<String> chunkIds = new Vector<String>();
         acquire();
-        for (String key : chunks.get(fileId).keySet()) {
-            chunkIds.add(key);
+        if (chunks.get(fileId) != null) {
+            for (String key : chunks.get(fileId).keySet()) {
+                chunkIds.add(key);
+            }
+            chunks.remove(fileId);
         }
-        chunks.remove(fileId);
-        release();
 
         String path = PATH + "chunks/" + fileId + " ";
         for (String id : chunkIds) {
             deleteChunkFromStore(path + id + "." + FILE_DATA_EXTENSION);
             deleteChunkFromStore(path + id + "." + FILE_INFO_EXTENSION);
         }
+        release();
     }
 
     /**
@@ -772,4 +841,204 @@ public class Backup {
         }
     }
 
+    /**
+     * Read a file to byte array
+     * @param arg name of the file
+     * @return byte array of the file
+     */
+    public byte[] readFile(String arg) {
+        Path path = Paths.get(PATH + "backup/" + arg);
+        byte[] data = null;
+        try {
+            data = Files.readAllBytes(path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (data == null) {
+            return null;
+        } else {
+            return data.clone();
+        }
+    }
+
+    /**
+     * Hash a file name using the name, owner and modified date
+     * @param filename name of the file
+     * @return hex string
+     */
+    public String hashFile(String filename) {
+        Path file = Paths.get(PATH + "backup/" + filename);
+        BasicFileAttributes attr = null;
+        String creationTime = "";
+        String owner_str = "";
+        try {
+            attr = Files.readAttributes(file, BasicFileAttributes.class);
+            creationTime = attr.lastModifiedTime().toString();
+
+            FileOwnerAttributeView ownerAttributeView = Files.getFileAttributeView(file, FileOwnerAttributeView.class);
+            UserPrincipal owner = ownerAttributeView.getOwner();
+
+            owner_str = owner.getName();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        String sum = filename + creationTime + owner_str;
+
+        MessageDigest md = null;
+        byte[] digest = new byte[0];
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+
+            md.update(sum.getBytes("UTF-8")); // Change this to "UTF-16" if needed
+            digest = md.digest();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
+        return bytesToHex(digest);
+    }
+
+    /**
+     * Convert a byte array to a hex string
+     * @param bytes byte array
+     * @return hex string
+     */
+    public String bytesToHex(byte[] bytes) {
+        char[] hexArray = "0123456789ABCDEF".toCharArray();
+        char[] hexChars = new char[bytes.length * 2];
+        for ( int j = 0; j < bytes.length; j++ ) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hexArray[v >>> 4];
+            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * Add a record to the system
+     * @param filename name of the file
+     * @param bu informations about the file
+     */
+    public void addFileBackedUp(String filename, BackedUp bu) {
+        acquire();
+        myFilesBackedUp.put(filename, bu);
+        release();
+        
+        writeToFilesTXT();
+    }
+
+    /**
+     * Delete a record of the system
+     * @param filename name of the file
+	 */
+	public void deleteFileBackedUp(String filename) {
+        acquire();
+        myFilesBackedUp.remove(filename);
+        release();
+        
+        writeToFilesTXT();
+	}
+
+    /**
+     * Update the information of files.txt
+     */
+    private void writeToFilesTXT() {
+    	File myFoo = new File(PATH + "backup/files.txt");
+        FileWriter fooWriter = null;
+        try {
+            // true to append
+            // false to overwrite.
+            fooWriter = new FileWriter(myFoo, false);
+
+            acquire();
+
+            for (Map.Entry<String, BackedUp> entry : myFilesBackedUp.entrySet()) {
+                String key = entry.getKey();
+                BackedUp value = entry.getValue();
+                fooWriter.write("-------------------------------------\n");
+                fooWriter.write(key + "\n");
+                fooWriter.write(value.getFileId() + "\n");
+                fooWriter.write(value.getSize() + "\n");
+            }
+
+            fooWriter.close();
+
+            release();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+	/**
+     * Returns the information of a file given its name
+     * @param filename name of the file
+     * @return BackedUp object, null if not found
+     */
+	public BackedUp getFileBackedUp(String filename) {
+		acquire();
+		BackedUp bu = myFilesBackedUp.get(filename);
+		release();
+		return bu;
+	}
+
+	/**
+	 * Get all the chunks that can be deleted
+	 * @return vector of the chunks that can be deleted
+	 */
+	public Vector<Pair<String, String> > getChunksCanBeDeleted() {
+		Vector<Pair<String, String> > ret = new Vector<Pair<String, String> >();
+		
+		for (Map.Entry<String, Map<String,Chunk> > fileIds : chunks.entrySet()) {
+            for (Map.Entry<String,Chunk> chunkIds : fileIds.getValue().entrySet()) {
+                if (chunkIds.getValue().canBeDeleted()) {
+            		acquire();
+                	ret.add(new Pair<String, String>(fileIds.getKey(), chunkIds.getKey()));
+            		release();
+                }
+            }
+        }
+		
+		return ret;
+	}
+
+	/**
+	 * Delete a chunk from storage
+	 * @param fileId id of the file
+	 * @param chunkId id of the chunk
+	 */
+	public void delete(String fileId, String chunkId) {
+		deleteChunk(chunks.get(fileId).get(chunkId));
+        String path = PATH + "chunks/" + fileId + " ";
+
+		acquire();
+        deleteChunkFromStore(path + chunkId + "." + FILE_DATA_EXTENSION);
+        deleteChunkFromStore(path + chunkId + "." + FILE_INFO_EXTENSION);
+        MessageCenter.output("Chunk deleted with file id " + fileId +
+                " and chunk id " + chunkId);
+		release();
+	}
+
+	/**
+	 * Remove a file track record of back up
+	 * @param filename name of the file
+	 */
+	public void removeFileBackedUp(String filename) {
+		acquire();
+        myFilesBackedUp.remove(filename);
+        release();
+        
+        writeToFilesTXT();		
+	}
+
+	/**
+	 * Get the path for the file to restore
+	 * @param filename name of the file
+	 * @return path to the file (including its name) as string
+	 */
+	public String getPathToRestore(String filename) {
+		return PATH + "restore/" + filename;
+	}
 }

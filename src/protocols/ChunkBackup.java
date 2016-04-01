@@ -57,7 +57,6 @@ public class ChunkBackup implements Connection {
     @Override
     public void handleReceived() {
         if (MessageTypes.PUTCHUNK == message.getMessageType()) {
-            //if can't store there's no need to wait
             Chunk chunk = new Chunk(message.getHeader().getChunkNo(), message.getHeader().getFileId(),
                     message.getHeader().getReplicationDeg(), message.getHeader().getSenderId(), message.getBody().getData());
 
@@ -82,7 +81,7 @@ public class ChunkBackup implements Connection {
         byte[] messageArray = message.compose();
 
         //while there isn't a minimum number of replications
-        //and the number of messages sent doesn't exceeds the maximum
+        //and the number of messages sent doesn't exceed the maximum
         while (Backup.getInstance().getMyChunksBackingUpCount(message.getHeader()) < minimum && count > 0) {
             count--;
             Server.getInstance().send(MessageTypes.PUTCHUNK, messageArray);
@@ -126,7 +125,10 @@ public class ChunkBackup implements Connection {
         } else if (Backup.getInstance().isStored(chunk)) {
             sleep();
             sendStoredMsg(chunk);
-            Backup.getInstance().getChunkThreadSafe(chunk.getFileId(), chunk.getId()).setRestored(true);
+            Chunk c = Backup.getInstance().getChunkThreadSafe(chunk.getFileId(), chunk.getId());
+            if (c != null) {
+            	c.setRestored(true);
+            }
         }
     }
 
@@ -135,7 +137,7 @@ public class ChunkBackup implements Connection {
      */
     private void sleep() {
         try {
-            Thread.sleep((long) (Math.random()%SLEEP_TIME));
+            Thread.sleep((long) ((Math.random()*1000)%SLEEP_TIME));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

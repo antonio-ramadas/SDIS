@@ -148,7 +148,7 @@ public class Chunk {
     public boolean canBeDeleted() {
         boolean deletable = false;
         acquire();
-        deletable = replications.size() >= minimumReplication;
+        deletable = minimumReplication > 1 && replications.size() >= minimumReplication;
         release();
         return deletable;
     }

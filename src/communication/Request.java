@@ -25,10 +25,6 @@ public class Request {
      * The address of the peer who sent the request.
      */
     private String address;
-    /**
-     * The port of the peer who sent the request.
-     */
-    private int port;
 
     /**
      * Constructor of the request. Starts a new thread to deal with the request.
@@ -38,7 +34,6 @@ public class Request {
     public Request(DatagramPacket packet) {
         data = Arrays.copyOfRange(packet.getData(), 0, packet.getLength());
         address = new String(packet.getAddress().getHostAddress());
-        port = packet.getPort();
 
         Runnable request = new MyThread();
         Thread request_thread = new Thread(request);
@@ -86,7 +81,7 @@ public class Request {
                 backup.handleReceived();
                 break;
             case GETCHUNK:
-                ChunkRestore restore1 = new ChunkRestore(message, address, port);
+                ChunkRestore restore1 = new ChunkRestore(message, address);
                 restore1.handleReceived();
                 break;
             case CHUNK:

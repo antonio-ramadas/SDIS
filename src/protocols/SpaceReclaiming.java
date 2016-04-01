@@ -30,6 +30,11 @@ public class SpaceReclaiming implements Connection {
     private final static int SLEEP_TIME = 401;
 
     /**
+     * Maximum sleep time of sleep before checks the chunk
+     */
+    private final static int WAIT_TIME = 30001;
+
+    /**
      * Version of the protocol
      */
     private static final String VERSION = "2.0";
@@ -52,6 +57,10 @@ public class SpaceReclaiming implements Connection {
     public void handleReceived() {
         Chunk chunk = Backup.getInstance().getChunkThreadSafe(message.getHeader().getFileId(),
                 message.getHeader().getChunkNo());
+        
+        if (chunk == null) {
+        	return;
+        }
 
         if (Backup.getInstance().isStored(chunk)) {
             chunk = Backup.getInstance().getChunkThreadSafe(message.getHeader().getFileId(),
@@ -61,8 +70,13 @@ public class SpaceReclaiming implements Connection {
 
             if (!chunk.canBeDeleted()) {
                 chunk.setRestored(false);
-                sleep((int) (Math.random()%SLEEP_TIME));
+                sleep((int) ((Math.random()*1000)%SLEEP_TIME));
                 if (!chunk.wasRestored()) {
+                    startBackUpProtocol(chunk);
+                    return;
+                }
+                sleep(WAIT_TIME + (int) ((Math.random()*10000)%10000));
+                if (chunk != null && !chunk.canBeDeleted()) {
                     startBackUpProtocol(chunk);
                 }
             }

@@ -1,16 +1,36 @@
 package communication;
 
+import cli.CLI_Arguments;
 import console.MessageCenter;
 import message.Body;
 import message.Header;
+import message.Message;
 import message.MessageTypes;
+import protocols.ChunkBackup;
+import protocols.ChunkRestore;
+import protocols.FileDeletion;
+import protocols.SpaceReclaiming;
+import storage.BackedUp;
 import storage.Backup;
+import storage.Chunk;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.Semaphore;
+import java.util.regex.MatchResult;
+
+import javafx.util.Pair;
 
 /**
  * Created by Antonio on 06-03-2016.
@@ -33,6 +53,16 @@ public class Server {
      * Channel of the Multicast Data Recovery channel
      */
     private Channel MDR_Channel;
+    
+    /**
+     * Socket for the enhancement of the restore
+     */
+    private Channel restoreEnh;
+    
+    /**
+     * Socket for the enhancement of the restore
+     */
+    private int portRestore;
 
     /**
      * Maximum number of requests the semaphore can allow to access at the same time
@@ -83,7 +113,7 @@ public class Server {
                 channel.getAddress(), Integer.parseInt(channel.getPort()));
         try {
             channel.getSocket().send(packet);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         nThreadsSem.release();
@@ -100,12 +130,12 @@ public class Server {
             case PUTCHUNK:
                 return MDB_Channel;
             //MC
+            case GETCHUNK:
             case STORED:
             case DELETE:
             case REMOVED:
                 return MC_Channel;
             //MDR
-            case GETCHUNK:
             case CHUNK:
                 return MDR_Channel;
         }
@@ -144,6 +174,53 @@ public class Server {
             e.printStackTrace();
         }
         nThreadsSem.release();
+    }
+
+    /**
+     * Initiates the backUp protocol
+     * @param args arguments given to the TestApp
+     */
+    public void backUp(String[] args) {
+        String filename = args[0];
+        byte[] data = Backup.getInstance().readFile(filename);
+        if (data == null) {
+            MessageCenter.error("Error loading file: " + filename);
+            return;
+        }
+
+        String fileId = Backup.getInstance().hashFile(filename);
+        byte[] chunkData = new byte[0];
+        int chunkSize = 64000;
+        int numberOfChunks = data.length / chunkSize;
+        int i;
+        String replication = args[1];
+        for (i = 0; i <= numberOfChunks; i++) {
+
+            chunkData = Arrays.copyOfRange(data, i*chunkSize, (i+1)*chunkSize);
+            Message m = new Message("PUTCHUNK", "2.0", id, fileId, Integer.toString(i), replication, chunkData);
+
+            ChunkBackup CB = new ChunkBackup(m);
+            CB.send();
+        }
+
+        /*
+        //too small
+        if (numberOfChunks == 0) {
+            chunkData = Arrays.copyOfRange(data, 0, data.length);
+            Message m = new Message("PUTCHUNK", "2.0", id, fileId, Integer.toString(0), replication, chunkData);
+
+            ChunkBackup CB = new ChunkBackup(m);
+            CB.send();
+        } else if (data.length % chunkSize == 0) {
+            //last chunk with body size 0
+            Message m = new Message("PUTCHUNK", "2.0", id, fileId, Integer.toString(i), replication, new byte[0]);
+
+            ChunkBackup CB = new ChunkBackup(m);
+            CB.send();
+        }*/
+
+        BackedUp bu = new BackedUp(fileId, data.length);
+        Backup.getInstance().addFileBackedUp(filename, bu);
     }
 
     /**
@@ -204,6 +281,10 @@ public class Server {
         Thread mdr_thread = new Thread(mdr);
         mdr_thread.start();
 
+        Runnable restore = new MyThread(restoreEnh);
+        Thread restore_thread = new Thread(restore);
+        restore_thread.start();
+
         Backup.getInstance().start();
 
         //uncomment to wait for the threads
@@ -211,6 +292,7 @@ public class Server {
             mc_thread.join();
             mdb_thread.join();
             mdr_thread.join();
+            restore_thread.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }*/
@@ -281,4 +363,113 @@ public class Server {
     public boolean sameId(String id1) {
         return getId().equals(id1);
     }
+
+    /**
+     * Initiates the deletion protocol for the file
+     * @param args file name
+     */
+	public void delete(String[] args) {
+		String filename = args[0];
+		BackedUp bu = Backup.getInstance().getFileBackedUp(filename);
+
+        Message m = new Message("DELETE", "2.0", id, bu.getFileId(), null);
+        
+        FileDeletion FD = new FileDeletion(m);
+        FD.send();
+
+        Backup.getInstance().removeFileBackedUp(filename);
+	}
+
+	/**
+     * Initiates the reclaim protocol
+     * @param args size (in bytes) to save
+	 */
+	public void reclaim(String[] args) {
+		int sizeToReclaim = Integer.parseInt(args[0]);
+
+		Vector<Pair<String,String> > canBeDeleted = Backup.getInstance().getChunksCanBeDeleted();
+		
+		for (Pair<String,String> pair : canBeDeleted) {
+			Chunk chk = Backup.getInstance().getChunkThreadSafe(pair.getKey(), pair.getValue());
+			Backup.getInstance().acquire();
+			sizeToReclaim -= chk.getData().length;
+			Backup.getInstance().release();
+			
+			
+			Message msg = new Message("REMOVED", "2.0", id, pair.getKey(), pair.getValue());
+            SpaceReclaiming sr = new SpaceReclaiming(msg);
+            sr.send();
+            
+            Backup.getInstance().delete(pair.getKey(), pair.getValue());
+            
+            if (sizeToReclaim <= 0) {
+            	return;
+            }
+		}
+		
+		if (sizeToReclaim > 0) {
+			MessageCenter.error("Failed to free enough space");
+        }
+	}
+
+	/**
+	 * Initiates the restore protocol
+	 * @param args name of the file
+	 * @param enhancement if true then the enhancement is used, otherwise it's not used
+	 */
+	public void restore(String[] args, boolean enhancement) {
+		String filename = args[0];
+		BackedUp bu = Backup.getInstance().getFileBackedUp(filename);
+		String fileId = bu.getFileId();
+		int size = bu.getSize();
+		
+		String version = "1.0";
+		String senderId = id;
+		if (enhancement) {
+			version = "1.9";
+			senderId = Integer.toString(portRestore);
+		}
+		
+		int numberOfChunks = size / 64000;
+		if (size % 64000 != 0) {
+			numberOfChunks++;
+		}
+		
+		try {
+			FileOutputStream fos = new FileOutputStream(Backup.getInstance().getPathToRestore(filename));
+			
+			for (int i = 0; i < numberOfChunks; i++) {
+				Message msg = new Message("GETCHUNK", version, senderId, fileId, Integer.toString(i));
+				ChunkRestore CR = new ChunkRestore(msg);
+				CR.send();
+				
+				String id = fileId + " " + Integer.toString(i);
+
+				if (Backup.getInstance().receivedChunk(id)) {
+					Chunk chk = Backup.getInstance().getChunkRestoredAndDelete(id);
+					if (chk != null) {
+						try {
+							fos.write(chk.getData());
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+					}
+				}
+			}
+			
+			fos.close();
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Initializes the channel for the restore enhancement
+	 */
+	public void startRestoreEnhancement() {
+		restoreEnh = new Channel();
+		portRestore = restoreEnh.getSocketPort();
+	}
 }

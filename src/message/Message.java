@@ -50,6 +50,7 @@ public class Message {
      */
     public Message(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg, byte[] data) {
         this(messageType, version, senderId, fileId, chunkNo, replicationDeg);
+        parseType();
         body = new Body(data);
     }
 
@@ -64,6 +65,7 @@ public class Message {
      */
     public Message(String messageType, String version, String senderId, String fileId, String chunkNo, String replicationDeg) {
         header = new Header(messageType, version, senderId, fileId, chunkNo, replicationDeg);
+        parseType();
     }
 
     /**
@@ -77,6 +79,7 @@ public class Message {
      */
     public Message(String messageType, String version, String senderId, String fileId, String chunkNo, byte[] data) {
         header = new Header(messageType, version, senderId, fileId, chunkNo);
+        parseType();
         body = new Body(data);
     }
 
@@ -90,6 +93,7 @@ public class Message {
      */
     public Message(String messageType, String version, String senderId, String fileId, String chunkNo) {
         header = new Header(messageType, version, senderId, fileId, chunkNo);
+        parseType();
     }
 
     /**
@@ -100,7 +104,7 @@ public class Message {
         this.message = message;
     }
 
-    /**
+	/**
      * Creates a body given its data
      * @param data data of the body
      */
